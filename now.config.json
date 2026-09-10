@@ -1,0 +1,9 @@
+{
+    "scope": "x_1733631_now_code",
+    "scopeId": "d99442a0c3578310022a3342b4013127",
+    "name": "Now Code",
+    "licensing": {
+        "enforceLicense": "none"
+    },
+    "description": "SDD-powered ServiceNow AI development assistant inspired by OpenCode. Implements the Gentle AI Spec Driven Development (SDD) 10-phase workflow for planning and building ServiceNow applications. Features platform-aware context gathering, ServiceNow best practices, OpenCode Zen LLM integration, and a custom React chat interface."
+}
