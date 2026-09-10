@@ -1,0 +1,92 @@
+schema: spec-driven
+
+# Operational context — commands, repo layout, architecture and the platform
+# conventions that will break the instance — lives in AGENTS.md at the repo root.
+# It is the single source of truth for all of it. Read it before planning work.
+# This file owns only what the SDD workflow itself consumes: the product
+# definition, testing capabilities, and the per-phase rules.
+reference: AGENTS.md
+
+context: |
+  Product: Now Code — AI chat living inside ServiceNow, an "OpenCode for
+  ServiceNow" harness to plan/build apps using the user's own LLM API key.
+  Methodology: Gentle AI SDD (explore/propose/spec/design/tasks/apply/verify).
+  Stack, layout, commands and platform conventions: see AGENTS.md.
+
+product:
+  summary: >
+    AI chat embedded in ServiceNow that helps plan and build new apps or
+    maintain existing ones inside the platform, using the user's own LLM
+    provider API key, with real instance context (tables, fields, business
+    rules, scripts, plugins) similar to Now Assist, but fully BYOUI.
+  requirements:
+    - Use the user's own LLM provider API key — starting with OpenCode Zen
+      (Go subscription), extensible to Anthropic, OpenAI, OpenRouter, local
+      models.
+    - Access the ServiceNow Table API so the AI can query and understand the
+      instance (tables, fields, business rules, scripts, plugins).
+    - Follow SDD from the Gentle AI framework
+      (https://github.com/Gentleman-Programming/gentle-ai) as the core
+      methodology, with user approval at key checkpoints.
+    - Know ServiceNow best practices (naming conventions, ACLs, scoping
+      rules, performance patterns) with real instance context.
+    - Custom React chat UI (BYOUI) — not Virtual Agent, not a widget — full
+      control of look and feel, inspired by the OpenCode web interface.
+    - Custom scoped app, versionable in GitHub, ready for source control.
+    - Embed design skills (Anthropic Frontend Design Skill, UI UX Pro Max) so
+      generated interfaces are not generic/templated.
+
+instance:
+  url: https://dev440743.service-now.com
+  scope: x_1733631_now_code
+  scope_sys_id: d99442a0c3578310022a3342b4013127
+  credential_alias: dev440743
+
+strict_tdd: false
+
+testing:
+  test_runner: none
+  test_command: ""
+  layers:
+    unit: false
+    integration: false
+    e2e: false
+  coverage: false
+  quality_tools:
+    linter: none
+    type_checker: "partial — npm run types generates types from instance schema; no standalone tsc --noEmit script"
+    formatter: none
+  safety_nets:
+    - "now-sdk build --frozenKeys — fails the build if any artifact would mint a new sys_id"
+    - "Structural refactors require the dist/app md5sum parity check — see AGENTS.md"
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Respect the keys.ts fixed-path convention (AGENTS.md); flag any change that would move or delete it
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+    - Call out any artifact lacking an explicit $id and how its sys_id stability is preserved
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    notes:
+      - Follow existing code patterns and the feature-based src/fluent/ layout
+      - Never move, rename, or omit src/fluent/generated/keys.ts from a commit
+      - "For any structural refactor: run the md5sum dist parity check from AGENTS.md"
+    tdd: false
+    test_command: ""
+  verify:
+    test_command: ""
+    build_command: "now-sdk build --frozenKeys"
+    coverage_threshold: 0
+    notes:
+      - Confirm dist/app md5sum parity for refactors (ignoring the known sys_module timestamp exception)
+  archive:
+    - Warn before merging destructive deltas
+    - Confirm any instance-side Flow Designer/UI Builder changes were pulled back via now-sdk transform before archiving
