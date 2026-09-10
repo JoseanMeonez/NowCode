@@ -1,0 +1,11 @@
+# machine-local: absolute paths from the machine that built the graph
+.graphify_python
+.graphify_root
+
+# regenerable from graph.json: `graphify export html`
+graph.html
+
+# local extraction cache and scratch files
+cache/
+.graphify_uncached.txt
+.needs_update
