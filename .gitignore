@@ -5,3 +5,5 @@ node_modules/
 target/
 *.tsbuildinfo
 .jest_cache
+# local Playwright MCP screenshots and snapshots
+.playwright-mcp/
