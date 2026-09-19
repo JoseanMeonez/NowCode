@@ -1,34 +1,73 @@
 /* ═══════════════════════════════════════════════════════════
-   Now Code — Liquid Glass Theme
-   Glass is chrome (sidebar, top bar, composer, dropdowns, modal,
-   error bar). Content (messages, code, artifacts, welcome) stays
-   solid and highly legible. Ambient light behind everything picks
-   up the active SDD phase color.
+   Now Code — Nature Distilled Theme
+   Structure inherited from the liquid-glass pass (layout, radius
+   hierarchy, pills, floating chrome geometry, insets, spacing).
+   Materials replaced: warm paper surfaces instead of glass, an
+   earthy palette, natural low-opacity shadows, and a light film-
+   grain texture on the app background only. Ambient light behind
+   everything still picks up the active SDD phase color, now mapped
+   to earthy tones.
    ═══════════════════════════════════════════════════════════ */
 
 /* ── Design Tokens ── */
 :root {
-  /* Palette */
-  --nc-abyss: #0C1322;
-  --nc-harbor: #16233A;
-  --nc-harbor-raised: #1B2A45;
-  --nc-frost: #E8EEF7;
-  --nc-mist: #A7B4C8;
-  --nc-meta: #8391A7;
-  --nc-signal: #7AA2F7;
+  color-scheme: light;
 
-  /* Semantic */
-  --nc-approve: #4ADE80;
-  --nc-reject: #F87171;
-  --nc-pending: #FBBF24;
+  /* Palette — Nature Distilled (light) */
+  --nc-paper: #E4E3D6;          /* lichen paper — app background only */
+  --nc-paper-raised: #FFFFFF;   /* sidebar / composer / dropdown / modal / cards / AI bubbles */
+  --nc-paper-sunken: #EFEEE4;   /* inputs, code blocks, tonal recess */
+  --nc-paper-recess: #E3E2D3;   /* deepest tonal step (scrollbar, active hover) */
+  --nc-ink: #2B3526;            /* moss ink — primary text (12.81:1 on white) */
+  --nc-ink-soft: #5B6350;       /* secondary text, meta (6.28:1 on white) */
+  --nc-ink-faint: #7C8570;      /* tertiary / disabled, decorative only */
+  --nc-accent: #5F6E34;         /* olive — primary accent (buttons, focus ring) */
+  --nc-accent-text: #4C5828;    /* olive, darkened for text/link use (7.68:1 on white) */
+  --nc-accent-hover: #4C5828;
+  --nc-secondary: #9A6B3A;      /* sepia — decorative/sparing emphasis */
+  --nc-secondary-text: #6B481F; /* sepia, darkened for text use (8.17:1 on white) */
+  --nc-ai: #43706F;             /* faded teal — AI state, decorative */
+  --nc-ai-text: #33544F;        /* teal, darkened for text use (8.33:1 on white) */
+  --nc-on-accent: #F5F3E8;      /* text/icon color on solid accent fills (5.01:1 on olive) */
+  --nc-user-bubble: #DCE0C6;    /* pale olive tint — distinct from white AI bubbles (9.46:1 ink) */
+
+  /* Back-compat aliases (kept so any missed selector still resolves sanely) */
+  --nc-abyss: var(--nc-paper);
+  --nc-harbor: var(--nc-paper-raised);
+  --nc-harbor-raised: var(--nc-paper-sunken);
+  --nc-frost: var(--nc-ink);
+  --nc-mist: var(--nc-ink-soft);
+  --nc-meta: var(--nc-ink-soft);
+  --nc-signal: var(--nc-accent);
+
+  /* Semantic — desaturated earthy, AA-checked */
+  --nc-approve: #3F6B32;
+  --nc-approve-bg: #DDE3CC;
+  --nc-reject: #8A3F32;
+  --nc-reject-bg: #E7D9D2;
+  --nc-pending: #6E5417;
+  --nc-pending-bg: #E9DDBB;
   --nc-danger: var(--nc-reject);
 
-  /* Borders */
-  --nc-border-soft: rgba(255, 255, 255, 0.10);
-  --nc-border-strong: rgba(255, 255, 255, 0.14);
+  /* SDD phase colors — light theme (AA on white/paper) */
+  --nc-phase-init: #4C5828;
+  --nc-phase-explore: #33544F;
+  --nc-phase-propose: #4D6B2E;
+  --nc-phase-spec: #6B481F;
+  --nc-phase-design: #5C5470;
+  --nc-phase-tasks: #8A3F32;
+  --nc-phase-apply: #8A5A24;
+  --nc-phase-verify: #2E6B5E;
+  --nc-phase-archive: #5B6350;
+  --nc-phase-onboard: #495D6B;
+
+  /* Borders — hairline moss tint */
+  --nc-border-soft: rgba(43, 53, 38, 0.12);
+  --nc-border-strong: rgba(43, 53, 38, 0.20);
 
   /* Typography */
-  --nc-font-sans: ui-sans-serif, system-ui, -apple-system, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, sans-serif;
+  --nc-font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --nc-font-sans: "Public Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --nc-font-mono: "JetBrains Mono", "Cascadia Code", ui-monospace, "SF Mono", Consolas, monospace;
   --nc-text-xs: 0.75rem;    /* 12px */
   --nc-text-sm: 0.8125rem;  /* 13px */
@@ -53,9 +92,9 @@
   --nc-space-6: 2rem;     /* 32px */
   --nc-space-7: 2.5rem;   /* 40px */
 
-  /* Shadows */
-  --nc-shadow-elevation: 0 12px 40px rgba(3, 8, 20, 0.45);
-  --nc-shadow-lg: 0 16px 48px rgba(3, 8, 20, 0.55);
+  /* Shadows — soft, warm, low-opacity natural shadows */
+  --nc-shadow-elevation: 0 10px 32px rgba(58, 51, 30, 0.14), 0 1px 2px rgba(58, 51, 30, 0.08);
+  --nc-shadow-lg: 0 20px 48px rgba(58, 51, 30, 0.18), 0 2px 4px rgba(58, 51, 30, 0.10);
 
   /* Transitions */
   --nc-transition-fast: 120ms ease;
@@ -69,11 +108,98 @@
   --nc-inset: 12px;
 }
 
+/* ── Dark theme — deep moss/forest key, same identity ──
+   Applies when the OS prefers dark and no explicit override is set,
+   or when data-theme="dark" is set explicitly. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --nc-paper: #1B2019;
+    --nc-paper-raised: #252B22;
+    --nc-paper-sunken: #161A14;
+    --nc-paper-recess: #12150F;
+    --nc-ink: #E4E3D6;
+    --nc-ink-soft: #A9AF9C;
+    --nc-ink-faint: #7C8570;
+    --nc-accent: #9CC97A;
+    --nc-accent-text: #B8D48A;
+    --nc-accent-hover: #ACD98C;
+    --nc-secondary: #D9A876;
+    --nc-secondary-text: #D9A876;
+    --nc-ai: #8FC9C4;
+    --nc-ai-text: #8FC9C4;
+    --nc-on-accent: #1B2019;
+    --nc-user-bubble: #33402C;
+
+    --nc-approve: #9CD98C;
+    --nc-approve-bg: #20301C;
+    --nc-reject: #E39C8E;
+    --nc-reject-bg: #30201C;
+    --nc-pending: #E3C583;
+    --nc-pending-bg: #302A18;
+
+    --nc-phase-init: #C6D19C;
+    --nc-phase-explore: #8FC9C4;
+    --nc-phase-propose: #A9D488;
+    --nc-phase-spec: #D9A876;
+    --nc-phase-design: #C3B8DA;
+    --nc-phase-tasks: #E3A296;
+    --nc-phase-apply: #E0B36B;
+    --nc-phase-verify: #8FDCC4;
+    --nc-phase-archive: #B9C2AB;
+    --nc-phase-onboard: #A9C0D4;
+
+    --nc-border-soft: rgba(228, 227, 214, 0.10);
+    --nc-border-strong: rgba(228, 227, 214, 0.18);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --nc-paper: #1B2019;
+  --nc-paper-raised: #252B22;
+  --nc-paper-sunken: #161A14;
+  --nc-paper-recess: #12150F;
+  --nc-ink: #E4E3D6;
+  --nc-ink-soft: #A9AF9C;
+  --nc-ink-faint: #7C8570;
+  --nc-accent: #9CC97A;
+  --nc-accent-text: #B8D48A;
+  --nc-accent-hover: #ACD98C;
+  --nc-secondary: #D9A876;
+  --nc-secondary-text: #D9A876;
+  --nc-ai: #8FC9C4;
+  --nc-ai-text: #8FC9C4;
+  --nc-on-accent: #1B2019;
+  --nc-user-bubble: #33402C;
+
+  --nc-approve: #9CD98C;
+  --nc-approve-bg: #20301C;
+  --nc-reject: #E39C8E;
+  --nc-reject-bg: #30201C;
+  --nc-pending: #E3C583;
+  --nc-pending-bg: #302A18;
+
+  --nc-phase-init: #C6D19C;
+  --nc-phase-explore: #8FC9C4;
+  --nc-phase-propose: #A9D488;
+  --nc-phase-spec: #D9A876;
+  --nc-phase-design: #C3B8DA;
+  --nc-phase-tasks: #E3A296;
+  --nc-phase-apply: #E0B36B;
+  --nc-phase-verify: #8FDCC4;
+  --nc-phase-archive: #B9C2AB;
+  --nc-phase-onboard: #A9C0D4;
+
+  --nc-border-soft: rgba(228, 227, 214, 0.10);
+  --nc-border-strong: rgba(228, 227, 214, 0.18);
+}
+
 /* Animatable custom property for the ambient phase tint */
 @property --nc-phase {
   syntax: '<color>';
   inherits: true;
-  initial-value: #7AA2F7;
+  initial-value: #5F6E34;
 }
 
 /* ── Reset ── */
@@ -93,8 +219,8 @@ body {
   font-family: var(--nc-font-sans);
   font-size: var(--nc-text-base);
   line-height: 1.5;
-  color: var(--nc-frost);
-  background-color: var(--nc-abyss);
+  color: var(--nc-ink);
+  background-color: var(--nc-paper);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -112,11 +238,11 @@ button {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(43, 53, 38, 0.18);
   border-radius: var(--nc-radius-full);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.24);
+  background: rgba(43, 53, 38, 0.30);
 }
 
 /* ── Visually-hidden utility ── */
@@ -136,18 +262,19 @@ button {
    APP ENVIRONMENT — phase-tinted ambient light
    ═══════════════════════════════════════════════════════════ */
 .nc-app {
-  --nc-phase: #7AA2F7;
+  --nc-phase: #5F6E34;
   position: relative;
   display: flex;
   gap: var(--nc-inset);
   padding: var(--nc-inset);
   height: 100%;
   width: 100%;
-  background-color: var(--nc-abyss);
+  background-color: var(--nc-paper);
   overflow: hidden;
   transition: --nc-phase 700ms ease;
 }
 
+/* Ambient phase wash — subtle earthy tint, not a glow */
 .nc-app::before {
   content: '';
   position: fixed;
@@ -155,9 +282,34 @@ button {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(680px 520px at 10% 6%, color-mix(in oklab, var(--nc-phase) 26%, transparent), transparent 70%),
-    radial-gradient(760px 640px at 90% 94%, color-mix(in oklab, var(--nc-phase) 20%, transparent), transparent 72%),
-    radial-gradient(900px 720px at 55% 45%, color-mix(in oklab, var(--nc-phase) 10%, transparent), transparent 80%);
+    radial-gradient(680px 520px at 10% 6%, color-mix(in oklab, var(--nc-phase) 10%, transparent), transparent 70%),
+    radial-gradient(760px 640px at 90% 94%, color-mix(in oklab, var(--nc-phase) 8%, transparent), transparent 72%),
+    radial-gradient(900px 720px at 55% 45%, color-mix(in oklab, var(--nc-phase) 5%, transparent), transparent 80%);
+}
+
+/* Vintage texture — subtle film grain on the app background only */
+.nc-app::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .nc-app::after {
+    opacity: 0.045;
+    mix-blend-mode: soft-light;
+  }
+}
+
+:root[data-theme="dark"] .nc-app::after {
+  opacity: 0.045;
+  mix-blend-mode: soft-light;
 }
 
 .nc-sidebar,
@@ -173,61 +325,28 @@ button {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   GLASS MATERIAL — chrome layer only
+   PAPER MATERIAL — chrome layer only (was glass)
+   Solid, near-opaque paper surface, hairline moss border, soft
+   natural shadow. Same shapes/radii as before; no blur/gloss.
    ═══════════════════════════════════════════════════════════ */
 .nc-sidebar,
-.nc-topbar,
 .nc-input-area,
 .nc-dropdown,
 .nc-modal,
 .nc-error-bar {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)),
-    color-mix(in oklab, var(--nc-phase) 7%, rgba(20, 31, 52, 0.46));
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  background: color-mix(in oklab, var(--nc-phase) 3%, var(--nc-paper-raised));
   border: 1px solid var(--nc-border-strong);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.32),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
-    var(--nc-shadow-elevation);
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .nc-sidebar,
-  .nc-topbar,
-  .nc-input-area,
-  .nc-dropdown,
-  .nc-modal,
-  .nc-error-bar {
-    background: var(--nc-harbor);
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .nc-sidebar,
-  .nc-topbar,
-  .nc-input-area,
-  .nc-dropdown,
-  .nc-modal,
-  .nc-error-bar {
-    background: var(--nc-harbor) !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
+  box-shadow: var(--nc-shadow-elevation);
 }
 
 @media (prefers-contrast: more) {
   .nc-sidebar,
-  .nc-topbar,
   .nc-input-area,
   .nc-dropdown,
   .nc-modal,
   .nc-error-bar {
-    background: var(--nc-harbor);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border: 2px solid var(--nc-frost);
+    background: var(--nc-paper-raised);
+    border: 2px solid var(--nc-ink);
   }
 }
 
@@ -262,7 +381,7 @@ button {
 .nc-logo-icon {
   font-family: var(--nc-font-mono);
   font-size: var(--nc-text-md);
-  color: var(--nc-signal);
+  color: var(--nc-accent-text);
   font-weight: 700;
 }
 
@@ -276,6 +395,19 @@ button {
   flex: 1;
   overflow-y: auto;
   padding: var(--nc-space-2) 0;
+}
+
+.nc-sessions-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--nc-space-1) var(--nc-space-4) var(--nc-space-2);
+}
+
+.nc-sessions-label {
+  font-size: var(--nc-text-xs);
+  font-weight: 600;
+  color: var(--nc-meta);
 }
 
 .nc-session-group {
@@ -302,7 +434,7 @@ button {
 }
 
 .nc-session-item:hover {
-  background-color: rgba(255, 255, 255, 0.06);
+  background-color: rgba(43, 53, 38, 0.06);
 }
 
 .nc-session-item:focus-visible {
@@ -325,7 +457,7 @@ button {
 }
 
 .nc-session-item--active .nc-session-item-name {
-  color: var(--nc-signal);
+  color: var(--nc-accent-text);
 }
 
 .nc-session-item-meta {
@@ -364,7 +496,10 @@ button {
   justify-content: space-between;
   min-height: var(--nc-topbar-h);
   padding: 0 var(--nc-space-4);
-  border-radius: var(--nc-radius-float);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
 }
 
 .nc-topbar-left {
@@ -374,14 +509,17 @@ button {
   min-width: 0;
 }
 
-.nc-menu-btn {
-  display: none;
+@media (min-width: 861px) {
+  .nc-sidebar--collapsed {
+    display: none;
+  }
 }
 
 .nc-topbar-title {
+  font-family: var(--nc-font-display);
   font-size: var(--nc-text-base);
   font-weight: 600;
-  color: var(--nc-frost);
+  color: var(--nc-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -411,7 +549,7 @@ button {
   width: 6px;
   height: 6px;
   border-radius: var(--nc-radius-full);
-  background-color: rgba(255, 255, 255, 0.18);
+  background-color: rgba(43, 53, 38, 0.16);
   transition: background-color var(--nc-transition-base), width var(--nc-transition-base);
 }
 
@@ -445,6 +583,15 @@ button {
   to { opacity: 1; transform: scale(1); }
 }
 
+/* Composer's model chip opens its menu upward, anchored to the chip */
+.nc-dropdown--up {
+  top: auto;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: auto;
+  transform-origin: bottom left;
+}
+
 .nc-dropdown-item {
   display: flex;
   align-items: center;
@@ -460,7 +607,7 @@ button {
 
 .nc-dropdown-item:hover,
 .nc-dropdown-item:focus-visible {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(43, 53, 38, 0.08);
 }
 
 .nc-dropdown-item--selected {
@@ -500,9 +647,8 @@ button {
   border-radius: var(--nc-radius-control);
   color: var(--nc-reject);
   font-size: var(--nc-text-sm);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)),
-    color-mix(in oklab, var(--nc-reject) 16%, rgba(20, 31, 52, 0.55));
+  background: color-mix(in oklab, var(--nc-reject) 12%, var(--nc-reject-bg));
+  border: 1px solid color-mix(in oklab, var(--nc-reject) 30%, transparent);
 }
 
 .nc-error-bar > span {
@@ -515,9 +661,12 @@ button {
    ═══════════════════════════════════════════════════════════ */
 .nc-chat-area {
   position: absolute;
-  inset: 0;
+  /* Starts below the transparent top bar so scrolled messages never slide under the title. */
+  inset: var(--nc-topbar-h) 0 0 0;
   overflow-y: auto;
-  padding: calc(var(--nc-topbar-h) + var(--nc-space-5)) var(--nc-space-5) calc(var(--nc-composer-h) + var(--nc-space-5));
+  padding: var(--nc-space-5) var(--nc-space-5) calc(var(--nc-composer-h) + var(--nc-space-5));
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--nc-space-5));
+  mask-image: linear-gradient(to bottom, transparent 0, #000 var(--nc-space-5));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -541,13 +690,14 @@ button {
 .nc-welcome-icon {
   font-family: var(--nc-font-mono);
   font-size: 2.5rem;
-  color: var(--nc-signal);
+  color: var(--nc-accent-text);
   margin-bottom: var(--nc-space-4);
 }
 
 .nc-welcome h2 {
+  font-family: var(--nc-font-display);
   font-size: var(--nc-text-lg);
-  color: var(--nc-frost);
+  color: var(--nc-ink);
   margin-bottom: var(--nc-space-2);
   font-weight: 600;
 }
@@ -575,7 +725,7 @@ button {
 
 .nc-hint svg {
   flex-shrink: 0;
-  color: var(--nc-signal);
+  color: var(--nc-accent-text);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -639,15 +789,15 @@ button {
 }
 
 .nc-message--user .nc-message-content {
-  background-color: color-mix(in oklab, var(--nc-phase) 22%, var(--nc-harbor));
-  color: var(--nc-frost);
+  background-color: var(--nc-user-bubble);
+  color: var(--nc-ink);
   white-space: pre-wrap;
 }
 
 .nc-message--assistant .nc-message-content {
-  background-color: rgba(22, 35, 58, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: var(--nc-frost);
+  background-color: var(--nc-paper-raised);
+  border: 1px solid var(--nc-border-soft);
+  color: var(--nc-ink);
   width: 100%;
 }
 
@@ -684,7 +834,7 @@ button {
 .nc-loading-dots span {
   width: 7px;
   height: 7px;
-  background-color: var(--nc-signal);
+  background-color: var(--nc-ai);
   border-radius: var(--nc-radius-full);
   animation: nc-dot-pulse 1.4s ease-in-out infinite;
 }
@@ -706,14 +856,15 @@ button {
    MARKDOWN RENDERING
    ═══════════════════════════════════════════════════════════ */
 .nc-md-h1, .nc-md-h2, .nc-md-h3 {
+  font-family: var(--nc-font-display);
   font-weight: 600;
-  color: var(--nc-frost);
+  color: var(--nc-ink);
   margin: var(--nc-space-3) 0 var(--nc-space-1);
 }
 
 .nc-md-h1 { font-size: var(--nc-text-lg); }
 .nc-md-h2 { font-size: var(--nc-text-md); }
-.nc-md-h3 { font-size: var(--nc-text-base); color: var(--nc-signal); }
+.nc-md-h3 { font-size: var(--nc-text-base); color: var(--nc-accent-text); }
 
 .nc-md-p {
   margin: var(--nc-space-1) 0;
@@ -733,18 +884,18 @@ button {
 .nc-inline-code {
   font-family: var(--nc-font-mono);
   font-size: 0.85em;
-  background-color: #0A1020;
-  color: var(--nc-signal);
+  background-color: var(--nc-paper-sunken);
+  color: var(--nc-secondary-text);
   padding: 0.1em 0.4em;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--nc-border-soft);
 }
 
 /* ── Code Blocks ── */
 .nc-code-block {
   margin: var(--nc-space-3) 0;
-  background-color: #0A1020;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: var(--nc-paper-sunken);
+  border: 1px solid var(--nc-border-soft);
   border-radius: var(--nc-radius-code);
   overflow: hidden;
 }
@@ -753,8 +904,8 @@ button {
   padding: var(--nc-space-1) var(--nc-space-3);
   font-size: var(--nc-text-xs);
   font-family: var(--nc-font-sans);
-  color: var(--nc-meta);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--nc-ink-soft);
+  border-bottom: 1px solid var(--nc-border-soft);
 }
 
 .nc-code-block pre {
@@ -767,7 +918,7 @@ button {
   font-family: var(--nc-font-mono);
   font-size: var(--nc-text-sm);
   line-height: 1.65;
-  color: var(--nc-mist);
+  color: var(--nc-ink);
   white-space: pre;
   tab-size: 2;
 }
@@ -780,7 +931,7 @@ button {
   max-width: 780px;
   margin-top: var(--nc-space-2);
   padding-top: var(--nc-space-3);
-  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  border-top: 1px dashed var(--nc-border-strong);
 }
 
 .nc-artifacts-label {
@@ -791,9 +942,9 @@ button {
 }
 
 .nc-artifact-card {
-  background-color: var(--nc-harbor);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-left: 4px solid var(--nc-signal);
+  background-color: var(--nc-paper-raised);
+  border: 1px solid var(--nc-border-soft);
+  border-left: 4px solid var(--nc-accent);
   border-radius: var(--nc-radius-message);
   margin-bottom: var(--nc-space-2);
   overflow: hidden;
@@ -811,7 +962,7 @@ button {
 }
 
 .nc-artifact-header:hover {
-  background-color: rgba(255, 255, 255, 0.04);
+  background-color: rgba(43, 53, 38, 0.05);
 }
 
 .nc-artifact-header:focus-visible {
@@ -827,9 +978,10 @@ button {
 }
 
 .nc-artifact-title {
+  font-family: var(--nc-font-display);
   font-size: var(--nc-text-base);
   font-weight: 600;
-  color: var(--nc-frost);
+  color: var(--nc-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -863,18 +1015,18 @@ button {
 
 .nc-artifact-body {
   padding: var(--nc-space-3);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--nc-border-soft);
   animation: nc-fade-in 150ms ease-out;
 }
 
 .nc-artifact-content {
   font-family: var(--nc-font-mono);
   font-size: var(--nc-text-sm);
-  color: var(--nc-mist);
-  background-color: #0A1020;
+  color: var(--nc-ink);
+  background-color: var(--nc-paper-sunken);
   padding: var(--nc-space-3);
   border-radius: var(--nc-radius-code);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--nc-border-soft);
   overflow-x: auto;
   white-space: pre-wrap;
   max-height: 300px;
@@ -909,19 +1061,19 @@ button {
   flex-wrap: wrap;
 }
 
-.nc-input-row {
+.nc-composer-shell {
   display: flex;
-  align-items: flex-end;
-  gap: var(--nc-space-2);
+  flex-direction: column;
   background: transparent;
   border-radius: var(--nc-radius-control);
   padding: var(--nc-space-1);
-  transition: box-shadow var(--nc-transition-base);
 }
 
-.nc-input-row:focus-within {
-  box-shadow: 0 0 0 2px var(--nc-signal);
-  border-radius: var(--nc-radius-control);
+.nc-composer-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--nc-space-1) var(--nc-space-1) 0;
 }
 
 .nc-textarea {
@@ -929,7 +1081,7 @@ button {
   background: transparent;
   border: none;
   outline: none;
-  color: var(--nc-frost);
+  color: var(--nc-ink);
   font-family: var(--nc-font-sans);
   font-size: var(--nc-text-base);
   line-height: 1.5;
@@ -940,7 +1092,7 @@ button {
 }
 
 .nc-textarea::placeholder {
-  color: var(--nc-meta);
+  color: var(--nc-ink-soft);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -964,35 +1116,35 @@ button {
 }
 
 .nc-badge--model {
-  background-color: color-mix(in oklab, var(--nc-signal) 16%, var(--nc-harbor));
-  color: var(--nc-signal);
+  background-color: color-mix(in oklab, var(--nc-accent) 14%, var(--nc-paper-raised));
+  color: var(--nc-accent-text);
 }
 
 .nc-badge--scope {
-  background-color: color-mix(in oklab, var(--nc-mist) 14%, var(--nc-harbor));
-  color: var(--nc-mist);
+  background-color: var(--nc-paper-sunken);
+  color: var(--nc-ink-soft);
   font-family: var(--nc-font-mono);
   font-size: var(--nc-text-xs);
 }
 
 .nc-badge--pending {
-  background-color: color-mix(in oklab, var(--nc-pending) 18%, var(--nc-harbor));
+  background-color: var(--nc-pending-bg);
   color: var(--nc-pending);
 }
 
 .nc-badge--approved {
-  background-color: color-mix(in oklab, var(--nc-approve) 18%, var(--nc-harbor));
+  background-color: var(--nc-approve-bg);
   color: var(--nc-approve);
 }
 
 .nc-badge--rejected {
-  background-color: color-mix(in oklab, var(--nc-reject) 18%, var(--nc-harbor));
+  background-color: var(--nc-reject-bg);
   color: var(--nc-reject);
 }
 
 .nc-badge--draft {
-  background-color: color-mix(in oklab, var(--nc-meta) 16%, var(--nc-harbor));
-  color: var(--nc-meta);
+  background-color: var(--nc-paper-sunken);
+  color: var(--nc-ink-soft);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1019,7 +1171,7 @@ button {
   white-space: nowrap;
   line-height: 1.4;
   background: transparent;
-  color: var(--nc-frost);
+  color: var(--nc-ink);
 }
 
 .nc-btn:active:not(:disabled) {
@@ -1032,47 +1184,49 @@ button {
 }
 
 .nc-btn:focus-visible {
-  outline: 2px solid var(--nc-signal);
+  outline: 2px solid var(--nc-accent);
   outline-offset: 2px;
 }
 
 /* Primary */
 .nc-btn--primary {
-  background-color: var(--nc-signal);
-  color: var(--nc-abyss);
-  border-color: var(--nc-signal);
+  background-color: var(--nc-accent);
+  color: var(--nc-on-accent);
+  border-color: var(--nc-accent);
 }
 .nc-btn--primary:hover:not(:disabled) {
-  background-color: #93b6f9;
+  background-color: var(--nc-accent-hover);
 }
 
 /* Secondary */
 .nc-btn--secondary {
-  background-color: rgba(255, 255, 255, 0.06);
+  background-color: rgba(43, 53, 38, 0.05);
   border-color: var(--nc-border-strong);
-  color: var(--nc-mist);
+  color: var(--nc-ink-soft);
 }
 .nc-btn--secondary:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(43, 53, 38, 0.09);
 }
 
-/* New Session */
-.nc-btn--new {
-  background-color: color-mix(in oklab, var(--nc-signal) 14%, transparent);
-  color: var(--nc-signal);
-  border-color: color-mix(in oklab, var(--nc-signal) 26%, transparent);
-  font-size: var(--nc-text-sm);
-  min-height: 36px;
-  padding: var(--nc-space-1) var(--nc-space-3);
+/* New session — quiet ghost icon button in the sessions toolbar */
+.nc-btn--plus-ghost {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  background: transparent;
+  border-color: transparent;
+  color: var(--nc-ink-soft);
 }
-.nc-btn--new:hover:not(:disabled) {
-  background-color: color-mix(in oklab, var(--nc-signal) 22%, transparent);
+.nc-btn--plus-ghost:hover:not(:disabled) {
+  background-color: rgba(43, 53, 38, 0.08);
+  color: var(--nc-ink);
 }
 
 /* Send */
 .nc-btn--send {
-  background-color: var(--nc-signal);
-  color: var(--nc-abyss);
+  background-color: var(--nc-accent);
+  color: var(--nc-on-accent);
   border-radius: var(--nc-radius-full);
   width: 44px;
   height: 44px;
@@ -1081,45 +1235,45 @@ button {
   flex-shrink: 0;
 }
 .nc-btn--send:hover:not(:disabled) {
-  background-color: #93b6f9;
+  background-color: var(--nc-accent-hover);
 }
 .nc-btn--send:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
-/* Quick action chips (glass) */
+/* Quick action chips */
 .nc-btn--quick {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--nc-paper-sunken);
   border-color: var(--nc-border-soft);
-  color: var(--nc-mist);
+  color: var(--nc-ink-soft);
   font-size: var(--nc-text-xs);
   min-height: 32px;
   padding: var(--nc-space-1) var(--nc-space-3);
   border-radius: var(--nc-radius-full);
 }
 .nc-btn--quick:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.14);
-  color: var(--nc-frost);
+  background: var(--nc-paper-recess);
+  color: var(--nc-ink);
 }
 
 /* Approve / Reject */
 .nc-btn--approve {
-  background-color: color-mix(in oklab, var(--nc-approve) 14%, transparent);
+  background-color: var(--nc-approve-bg);
   color: var(--nc-approve);
-  border-color: color-mix(in oklab, var(--nc-approve) 28%, transparent);
+  border-color: color-mix(in oklab, var(--nc-approve) 30%, transparent);
 }
 .nc-btn--approve:hover:not(:disabled) {
-  background-color: color-mix(in oklab, var(--nc-approve) 24%, transparent);
+  background-color: color-mix(in oklab, var(--nc-approve) 24%, var(--nc-approve-bg));
 }
 
 .nc-btn--reject {
-  background-color: color-mix(in oklab, var(--nc-reject) 14%, transparent);
+  background-color: var(--nc-reject-bg);
   color: var(--nc-reject);
-  border-color: color-mix(in oklab, var(--nc-reject) 28%, transparent);
+  border-color: color-mix(in oklab, var(--nc-reject) 30%, transparent);
 }
 .nc-btn--reject:hover:not(:disabled) {
-  background-color: color-mix(in oklab, var(--nc-reject) 24%, transparent);
+  background-color: color-mix(in oklab, var(--nc-reject) 24%, var(--nc-reject-bg));
 }
 
 /* Icon-only button */
@@ -1129,26 +1283,33 @@ button {
   min-height: 40px;
   padding: 0;
   border-radius: var(--nc-radius-control);
-  color: var(--nc-mist);
+  color: var(--nc-ink-soft);
 }
 .nc-btn--icon:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.08);
-  color: var(--nc-frost);
+  background-color: rgba(43, 53, 38, 0.08);
+  color: var(--nc-ink);
 }
 
-/* Model select trigger (glass chip) */
-.nc-btn--model-select {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: var(--nc-border-soft);
-  color: var(--nc-mist);
+/* Theme toggle — 44px minimum hit target for accessibility */
+.nc-btn--theme {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+}
+
+/* Model select trigger — borderless text chip in the composer toolbar */
+.nc-btn--model-chip {
+  background: transparent;
+  border-color: transparent;
+  color: var(--nc-ink-soft);
   font-size: var(--nc-text-sm);
-  min-height: 36px;
-  padding: var(--nc-space-1) var(--nc-space-3);
+  min-height: 32px;
+  padding: var(--nc-space-1) var(--nc-space-2);
   border-radius: var(--nc-radius-control);
 }
-.nc-btn--model-select:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.14);
-  color: var(--nc-frost);
+.nc-btn--model-chip:hover:not(:disabled) {
+  background-color: rgba(43, 53, 38, 0.06);
+  color: var(--nc-ink);
 }
 
 .nc-chevron {
@@ -1168,19 +1329,20 @@ button {
   position: fixed;
   inset: 0;
   z-index: 40;
-  background: rgba(3, 8, 20, 0.55);
+  background: rgba(30, 26, 16, 0.45);
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
   animation: nc-fade-in 150ms ease-out;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   MODAL
+   MODAL — scrim keeps a functional blur; the panel itself is
+   solid paper, matching the rest of the chrome.
    ═══════════════════════════════════════════════════════════ */
 .nc-modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(3, 8, 20, 0.55);
+  background-color: rgba(30, 26, 16, 0.45);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   display: flex;
@@ -1211,9 +1373,10 @@ button {
   justify-content: space-between;
   padding: var(--nc-space-4);
   border-bottom: 1px solid var(--nc-border-soft);
+  font-family: var(--nc-font-display);
   font-weight: 600;
   font-size: var(--nc-text-base);
-  color: var(--nc-frost);
+  color: var(--nc-ink);
 }
 
 .nc-modal-body {
@@ -1243,17 +1406,17 @@ button {
 .nc-label {
   font-size: var(--nc-text-sm);
   font-weight: 600;
-  color: var(--nc-mist);
+  color: var(--nc-ink-soft);
 }
 
 .nc-input,
 .nc-select {
   height: 40px;
   padding: 0 var(--nc-space-3);
-  background-color: var(--nc-abyss);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background-color: var(--nc-paper-sunken);
+  border: 1px solid var(--nc-border-strong);
   border-radius: var(--nc-radius-control);
-  color: var(--nc-frost);
+  color: var(--nc-ink);
   font-family: var(--nc-font-sans);
   font-size: var(--nc-text-base);
   outline: none;
@@ -1262,17 +1425,17 @@ button {
 
 .nc-input:focus,
 .nc-select:focus {
-  border-color: var(--nc-signal);
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--nc-signal) 35%, transparent);
+  border-color: var(--nc-accent);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--nc-accent) 35%, transparent);
 }
 
 .nc-input::placeholder {
-  color: var(--nc-meta);
+  color: var(--nc-ink-soft);
 }
 
 .nc-select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238391A7' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235B6350' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 32px;
@@ -1280,17 +1443,14 @@ button {
 }
 
 .nc-select option {
-  background-color: var(--nc-harbor);
-  color: var(--nc-frost);
+  background-color: var(--nc-paper-raised);
+  color: var(--nc-ink);
 }
 
 /* ═══════════════════════════════════════════════════════════
    RESPONSIVE — sidebar becomes a floating glass sheet
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 860px) {
-  .nc-menu-btn {
-    display: inline-flex;
-  }
 
   .nc-sidebar {
     position: fixed;

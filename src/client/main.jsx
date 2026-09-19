@@ -7,17 +7,19 @@ import './styles.css';
    ═══════════════════════════════════════════════════════════ */
 var API = '/api/x_1733631_now_code/now_code_api';
 
+/* Phase colors read from CSS custom properties so each theme (light/dark)
+   supplies its own AA-safe value — see --nc-phase-* in styles.css. */
 var SDD_PHASES = [
-  { key: 'init', label: 'Initialize', color: '#7aa2f7' },
-  { key: 'explore', label: 'Explore', color: '#7dcfff' },
-  { key: 'propose', label: 'Propose', color: '#9ece6a' },
-  { key: 'spec', label: 'Specification', color: '#e0af68' },
-  { key: 'design', label: 'Design', color: '#bb9af7' },
-  { key: 'tasks', label: 'Tasks', color: '#f7768e' },
-  { key: 'apply', label: 'Apply', color: '#ff9e64' },
-  { key: 'verify', label: 'Verify', color: '#73daca' },
-  { key: 'archive', label: 'Archive', color: '#565f89' },
-  { key: 'onboard', label: 'Onboard', color: '#c0caf5' }
+  { key: 'init', label: 'Initialize', color: 'var(--nc-phase-init)' },
+  { key: 'explore', label: 'Explore', color: 'var(--nc-phase-explore)' },
+  { key: 'propose', label: 'Propose', color: 'var(--nc-phase-propose)' },
+  { key: 'spec', label: 'Specification', color: 'var(--nc-phase-spec)' },
+  { key: 'design', label: 'Design', color: 'var(--nc-phase-design)' },
+  { key: 'tasks', label: 'Tasks', color: 'var(--nc-phase-tasks)' },
+  { key: 'apply', label: 'Apply', color: 'var(--nc-phase-apply)' },
+  { key: 'verify', label: 'Verify', color: 'var(--nc-phase-verify)' },
+  { key: 'archive', label: 'Archive', color: 'var(--nc-phase-archive)' },
+  { key: 'onboard', label: 'Onboard', color: 'var(--nc-phase-onboard)' }
 ];
 
 /* ═══════════════════════════════════════════════════════════
@@ -49,7 +51,13 @@ async function apiCall(path, opts) {
    ═══════════════════════════════════════════════════════════ */
 function getPhaseInfo(key) {
   var found = SDD_PHASES.find(function(p) { return p.key === key; });
-  return found || { key: key, label: key || 'None', color: '#7AA2F7' };
+  return found || { key: key, label: key || 'None', color: 'var(--nc-phase-init)' };
+}
+
+/* Tinted background for a phase badge/pill, theme-safe (avoids string-
+   concatenating an alpha suffix onto a var() reference). */
+function phaseTint(color, pct) {
+  return 'color-mix(in oklab, ' + color + ' ' + (pct || 13) + '%, transparent)';
 }
 
 function formatTime(dateStr) {
@@ -88,7 +96,9 @@ var ICON_PATHS = {
   alert: 'M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01',
   message: 'M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z',
   layers: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5',
-  search: 'M19 11a8 8 0 11-8-8 8 8 0 018 8zM21 21l-4.35-4.35'
+  search: 'M19 11a8 8 0 11-8-8 8 8 0 018 8zM21 21l-4.35-4.35',
+  sun: 'M12 17a5 5 0 100-10 5 5 0 000 10zM12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42',
+  moon: 'M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 108.5 10.5z'
 };
 
 function Icon(props) {
@@ -295,7 +305,7 @@ function SDDArtifactCard(props) {
           <span className="nc-artifact-type">{toSentenceCase(artifact.artifact_type)}</span>
         </div>
         <div className="nc-artifact-meta">
-          <span className="nc-badge" style={{ backgroundColor: phase.color + '22', color: phase.color }}>
+          <span className="nc-badge" style={{ backgroundColor: phaseTint(phase.color), color: phase.color }}>
             {phase.label}
           </span>
           <span className={'nc-badge nc-badge--' + status}>
@@ -347,7 +357,7 @@ function SessionItem(props) {
       <div className="nc-session-item-meta">
         <span className="nc-badge nc-badge--model">{session.model || 'default'}</span>
         {phase && (
-          <span className="nc-badge" style={{ backgroundColor: phase.color + '22', color: phase.color }}>
+          <span className="nc-badge" style={{ backgroundColor: phaseTint(phase.color), color: phase.color }}>
             {phase.label}
           </span>
         )}
@@ -367,6 +377,8 @@ function SessionSidebar(props) {
   var onNewSession = props.onNewSession;
   var open = props.open;
   var onClose = props.onClose;
+  var sidebarVisible = props.sidebarVisible;
+  var onToggleSidebar = props.onToggleSidebar;
 
   var today = new Date().toDateString();
   var todaySessions = sessions.filter(function(s) {
@@ -384,19 +396,28 @@ function SessionSidebar(props) {
   return (
     <React.Fragment>
       {open && <div className="nc-scrim" onClick={onClose} aria-hidden="true" />}
-      <aside className={'nc-sidebar' + (open ? ' nc-sidebar--open' : '')}
-        role="navigation" aria-label="Sessions">
+      <aside className={'nc-sidebar' + (open ? ' nc-sidebar--open' : '') + (props.collapsed ? ' nc-sidebar--collapsed' : '')}
+        role="navigation" aria-label="Sessions"
+        aria-hidden={props.hidden ? 'true' : undefined}
+        inert={props.hidden ? '' : undefined}>
         <div className="nc-sidebar-header">
           <div className="nc-logo">
             <span className="nc-logo-icon" aria-hidden="true">{'\u27E8/\u27E9'}</span>
             <span className="nc-logo-text">Now Code</span>
           </div>
-          <button className="nc-btn nc-btn--new" onClick={onNewSession}
-            aria-label="Create new session">
-            <Icon name="plus" size={14} /> <span>New</span>
+          <button className="nc-btn nc-btn--icon nc-menu-btn" onClick={onToggleSidebar}
+            aria-label={sidebarVisible ? 'Hide sessions' : 'Show sessions'} aria-expanded={!!sidebarVisible}>
+            <Icon name="menu" size={18} />
           </button>
         </div>
         <div className="nc-sidebar-sessions">
+          <div className="nc-sessions-toolbar">
+            <span className="nc-sessions-label">Sessions</span>
+            <button className="nc-btn nc-btn--plus-ghost" onClick={onNewSession}
+              aria-label="New session">
+              <Icon name="plus" size={14} />
+            </button>
+          </div>
           {todaySessions.length > 0 && (
             <div className="nc-session-group">
               <div className="nc-session-group-label">Today</div>
@@ -437,33 +458,10 @@ function SessionSidebar(props) {
    ═══════════════════════════════════════════════════════════ */
 function TopBar(props) {
   var session = props.session;
-  var models = props.models;
-  var selectedModel = props.selectedModel;
-  var onModelChange = props.onModelChange;
-  var sidebarOpen = props.sidebarOpen;
+  var sidebarVisible = props.sidebarVisible;
   var onToggleSidebar = props.onToggleSidebar;
-  var dropdownState = useState(false);
-  var dropdownOpen = dropdownState[0];
-  var setDropdownOpen = dropdownState[1];
-  var selectorRef = useRef(null);
-
-  useEffect(function() {
-    if (!dropdownOpen) return undefined;
-    function handleOutside(e) {
-      if (selectorRef.current && !selectorRef.current.contains(e.target)) {
-        setDropdownOpen(false);
-      }
-    }
-    function handleKey(e) {
-      if (e.key === 'Escape') setDropdownOpen(false);
-    }
-    document.addEventListener('mousedown', handleOutside);
-    document.addEventListener('keydown', handleKey);
-    return function() {
-      document.removeEventListener('mousedown', handleOutside);
-      document.removeEventListener('keydown', handleKey);
-    };
-  }, [dropdownOpen]);
+  var theme = props.theme;
+  var onToggleTheme = props.onToggleTheme;
 
   var phase = (session && (session.sdd_active === 'true' || session.sdd_active === true))
     ? getPhaseInfo(session.sdd_phase)
@@ -472,63 +470,35 @@ function TopBar(props) {
   return (
     <header className="nc-topbar" role="banner">
       <div className="nc-topbar-left">
-        <button className="nc-btn nc-btn--icon nc-menu-btn" onClick={onToggleSidebar}
-          aria-label="Show sessions" aria-expanded={!!sidebarOpen}>
-          <Icon name="menu" size={18} />
-        </button>
-        <span className="nc-topbar-title">
-          {session ? session.name : 'Select a session'}
-        </span>
-        {session && session.context_scope && (
-          <span className="nc-badge nc-badge--scope">{session.context_scope}</span>
+        {!sidebarVisible && (
+          <button className="nc-btn nc-btn--icon nc-menu-btn" onClick={onToggleSidebar}
+            aria-label="Show sessions" aria-expanded={false}>
+            <Icon name="menu" size={18} />
+          </button>
+        )}
+        {session && (
+          <React.Fragment>
+            <span className="nc-topbar-title">{session.name}</span>
+            {session.context_scope && (
+              <span className="nc-badge nc-badge--scope">{session.context_scope}</span>
+            )}
+            {phase && (
+              <div className="nc-topbar-sdd">
+                <span className="nc-badge" style={{ backgroundColor: phaseTint(phase.color), color: phase.color }}>
+                  SDD: {phase.label}
+                </span>
+                <SDDPhaseDots currentPhase={session.sdd_phase} />
+              </div>
+            )}
+          </React.Fragment>
         )}
       </div>
       <div className="nc-topbar-right">
-        {phase && (
-          <div className="nc-topbar-sdd">
-            <span className="nc-badge" style={{ backgroundColor: phase.color + '22', color: phase.color }}>
-              SDD: {phase.label}
-            </span>
-            <SDDPhaseDots currentPhase={session.sdd_phase} />
-          </div>
-        )}
-        <div className="nc-model-selector" ref={selectorRef}>
-          <button className="nc-btn nc-btn--model-select"
-            onClick={function() { setDropdownOpen(!dropdownOpen); }}
-            aria-expanded={dropdownOpen}
-            aria-haspopup="listbox">
-            <Icon name="cpu" size={14} />
-            <span>{selectedModel || 'Select model'}</span>
-            <Icon name="chevronDown" size={14} className={'nc-chevron' + (dropdownOpen ? ' nc-chevron--open' : '')} />
-          </button>
-          {dropdownOpen && (
-            <div className="nc-dropdown" role="listbox">
-              {models.map(function(m) {
-                var id = m.id || m.name;
-                var isSelected = id === selectedModel;
-                return (
-                  <div key={id} role="option"
-                    aria-selected={isSelected}
-                    tabIndex={0}
-                    className={'nc-dropdown-item' + (isSelected ? ' nc-dropdown-item--selected' : '')}
-                    onClick={function() {
-                      onModelChange(id);
-                      setDropdownOpen(false);
-                    }}>
-                    <span className="nc-dropdown-item-main">
-                      <span>{m.name || m.id}</span>
-                      {m.provider && <span className="nc-dropdown-item-sub">{m.provider}</span>}
-                    </span>
-                    {isSelected && <Icon name="check" size={14} />}
-                  </div>
-                );
-              })}
-              {models.length === 0 && (
-                <div className="nc-dropdown-item nc-dropdown-item--empty">No models available</div>
-              )}
-            </div>
-          )}
-        </div>
+        <button className="nc-btn nc-btn--icon nc-btn--theme"
+          onClick={onToggleTheme}
+          aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}>
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} />
+        </button>
       </div>
     </header>
   );
@@ -558,7 +528,7 @@ function ChatMessage(props) {
       <div className="nc-message-body">
         {phase && (
           <span className="nc-badge nc-badge--sm nc-message-phase"
-            style={{ backgroundColor: phase.color + '22', color: phase.color }}>
+            style={{ backgroundColor: phaseTint(phase.color), color: phase.color }}>
             {phase.label}
           </span>
         )}
@@ -648,10 +618,35 @@ function MessageInput(props) {
   var disabled = props.disabled;
   var sddActive = props.sddActive;
   var hasPendingProposal = props.hasPendingProposal;
+  var models = props.models;
+  var selectedModel = props.selectedModel;
+  var onModelChange = props.onModelChange;
   var valueState = useState('');
   var value = valueState[0];
   var setValue = valueState[1];
   var textareaRef = useRef(null);
+  var dropdownState = useState(false);
+  var dropdownOpen = dropdownState[0];
+  var setDropdownOpen = dropdownState[1];
+  var selectorRef = useRef(null);
+
+  useEffect(function() {
+    if (!dropdownOpen) return undefined;
+    function handleOutside(e) {
+      if (selectorRef.current && !selectorRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    function handleKey(e) {
+      if (e.key === 'Escape') setDropdownOpen(false);
+    }
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('keydown', handleKey);
+    return function() {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [dropdownOpen]);
 
   var handleSend = useCallback(function() {
     var trimmed = value.trim();
@@ -709,19 +704,58 @@ function MessageInput(props) {
           )}
         </div>
       )}
-      <div className="nc-input-row">
+      <div className="nc-composer-shell">
         <textarea ref={textareaRef} className="nc-textarea"
-          placeholder="Ask anything... a session will be created automatically"
+          placeholder="Ask anything..."
           value={value} onChange={handleInput} onKeyDown={handleKeyDown}
           onKeyUp={function(e) { e.stopPropagation(); }}
           onKeyPress={function(e) { e.stopPropagation(); }}
           onFocus={function(e) { e.stopPropagation(); }}
           disabled={disabled} rows={1}
           aria-label="Message input" />
-        <button className="nc-btn nc-btn--send" onClick={handleSend}
-          disabled={disabled || !value.trim()} aria-label="Send message">
-          <Icon name="arrowUp" size={18} />
-        </button>
+        <div className="nc-composer-toolbar">
+          <div className="nc-model-selector" ref={selectorRef}>
+            <button className="nc-btn nc-btn--model-chip"
+              onClick={function() { setDropdownOpen(!dropdownOpen); }}
+              aria-expanded={dropdownOpen}
+              aria-haspopup="listbox">
+              <Icon name="cpu" size={14} />
+              <span>{selectedModel || 'Select model'}</span>
+              <Icon name="chevronDown" size={14} className={'nc-chevron' + (dropdownOpen ? ' nc-chevron--open' : '')} />
+            </button>
+            {dropdownOpen && (
+              <div className="nc-dropdown nc-dropdown--up" role="listbox">
+                {models.map(function(m) {
+                  var id = m.id || m.name;
+                  var isSelected = id === selectedModel;
+                  return (
+                    <div key={id} role="option"
+                      aria-selected={isSelected}
+                      tabIndex={0}
+                      className={'nc-dropdown-item' + (isSelected ? ' nc-dropdown-item--selected' : '')}
+                      onClick={function() {
+                        onModelChange(id);
+                        setDropdownOpen(false);
+                      }}>
+                      <span className="nc-dropdown-item-main">
+                        <span>{m.name || m.id}</span>
+                        {m.provider && <span className="nc-dropdown-item-sub">{m.provider}</span>}
+                      </span>
+                      {isSelected && <Icon name="check" size={14} />}
+                    </div>
+                  );
+                })}
+                {models.length === 0 && (
+                  <div className="nc-dropdown-item nc-dropdown-item--empty">No models available</div>
+                )}
+              </div>
+            )}
+          </div>
+          <button className="nc-btn nc-btn--send" onClick={handleSend}
+            disabled={disabled || !value.trim()} aria-label="Send message">
+            <Icon name="arrowUp" size={18} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -866,6 +900,66 @@ function App() {
   var sidebarState = useState(false);
   var sidebarOpen = sidebarState[0];
   var setSidebarOpen = sidebarState[1];
+
+  /* Desktop collapses the docked sidebar; mobile (≤860px, matches CSS) toggles the off-canvas sheet. */
+  var collapsedState = useState(false);
+  var sidebarCollapsed = collapsedState[0];
+  var setSidebarCollapsed = collapsedState[1];
+  var mobileState = useState(function() {
+    return window.matchMedia('(max-width: 860px)').matches;
+  });
+  var isMobile = mobileState[0];
+  var setIsMobile = mobileState[1];
+
+  useEffect(function() {
+    var mq = window.matchMedia('(max-width: 860px)');
+    function handleChange(e) { setIsMobile(e.matches); }
+    mq.addEventListener('change', handleChange);
+    return function() { mq.removeEventListener('change', handleChange); };
+  }, []);
+
+  var sidebarVisible = isMobile ? sidebarOpen : !sidebarCollapsed;
+  var toggleSidebar = function() {
+    if (isMobile) {
+      setSidebarOpen(function(v) { return !v; });
+    } else {
+      setSidebarCollapsed(function(v) { return !v; });
+    }
+  };
+
+  var themeState = useState(function() {
+    try {
+      var saved = window.localStorage.getItem('nc-theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+    } catch (e) { /* ignore */ }
+    return null;
+  });
+  var theme = themeState[0];
+  var setTheme = themeState[1];
+
+  useEffect(function() {
+    var root = document.documentElement;
+    if (theme === 'light' || theme === 'dark') {
+      root.setAttribute('data-theme', theme);
+    } else {
+      root.removeAttribute('data-theme');
+    }
+  }, [theme]);
+
+  var toggleTheme = useCallback(function() {
+    setTheme(function(current) {
+      var isDark = current === 'dark' || (!current && window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches);
+      var next = isDark ? 'light' : 'dark';
+      try { window.localStorage.setItem('nc-theme', next); } catch (e) { /* ignore */ }
+      return next;
+    });
+  }, []);
+
+  var effectiveTheme = theme || (
+    (typeof window !== 'undefined' && window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'
+  );
 
   /* ── Close mobile sidebar sheet on Escape ── */
   useEffect(function() {
@@ -1048,7 +1142,7 @@ function App() {
   var isSddActive = activeSession
     && (activeSession.sdd_active === 'true' || activeSession.sdd_active === true);
 
-  var phaseColor = isSddActive ? getPhaseInfo(activeSession.sdd_phase).color : '#7AA2F7';
+  var phaseColor = isSddActive ? getPhaseInfo(activeSession.sdd_phase).color : 'var(--nc-accent)';
 
   return (
     <div className="nc-app" style={{ '--nc-phase': phaseColor }}>
@@ -1059,15 +1153,18 @@ function App() {
         onNewSession={function() { setShowModal(true); }}
         open={sidebarOpen}
         onClose={function() { setSidebarOpen(false); }}
+        collapsed={sidebarCollapsed}
+        hidden={!sidebarVisible}
+        sidebarVisible={sidebarVisible}
+        onToggleSidebar={toggleSidebar}
       />
       <div className="nc-main">
         <TopBar
           session={activeSession}
-          models={models}
-          selectedModel={selectedModel}
-          onModelChange={setSelectedModel}
-          sidebarOpen={sidebarOpen}
-          onToggleSidebar={function() { setSidebarOpen(function(v) { return !v; }); }}
+          sidebarVisible={sidebarVisible}
+          onToggleSidebar={toggleSidebar}
+          theme={effectiveTheme}
+          onToggleTheme={toggleTheme}
         />
         {error && (
           <div className="nc-error-bar" role="alert">
@@ -1091,6 +1188,9 @@ function App() {
           disabled={sending}
           sddActive={isSddActive}
           hasPendingProposal={hasPendingProposal}
+          models={models}
+          selectedModel={selectedModel}
+          onModelChange={setSelectedModel}
         />
       </div>
       <NewSessionModal
