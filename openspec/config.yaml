@@ -37,10 +37,10 @@ product:
       generated interfaces are not generic/templated.
 
 instance:
-  url: https://dev440743.service-now.com
+  url: https://dev312366.service-now.com
   scope: x_1733631_now_code
   scope_sys_id: d99442a0c3578310022a3342b4013127
-  credential_alias: dev440743
+  credential_alias: pdi
 
 strict_tdd: false
 
