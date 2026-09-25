@@ -63,7 +63,7 @@ every record — this diff is what catches it.
 src/client/main.jsx  (React BYOUI, served as UI Page x_1733631_now_code_chat.do)
         |  fetch /api/x_1733631_now_code/now_code_api/...
         v
-src/fluent/api/operations/*.js        16 Scripted REST operations, thin controllers
+src/fluent/api/operations/*.js        18 Scripted REST operations, thin controllers
         |                              validate input, load GlideRecord, delegate
         v
 NowCodeSDDOrchestrator                 src/fluent/sdd/sdd-orchestrator.server.js
@@ -112,6 +112,27 @@ The `NowCode Zen API` REST message and the `NowCode OpenCode Zen` alias are lega
 records from the first import; nothing calls them any more. They are kept so
 `install` does not have to delete instance records.
 
+## Warranty tracking screen
+
+A second, independent UI page: `x_1733631_now_code_warranty.do` (navigator:
+**Garantías → Seguimiento de garantías**, roles itil/admin). React sources live in
+`src/client/warranty/`; the SDK bundles each UiPage's imported `index.html` as its
+own entry. Data comes from `GET /warranty/requests` and
+`GET /warranty/requests/{ritm_id}`, backed by `NowCodeWarrantyTracker`
+(`src/fluent/warranty/`), which reads global tables (`sc_req_item`, `sc_task`,
+`task_sla`, `sc_cat_item`) — requested items through `GlideRecordSecure` so
+platform ACLs apply.
+
+- Catalog item: `x_1733631_now_code.warranty.catalog_items` (sys_ids or names);
+  empty = active items whose name contains `warranty.item_name_match` (`garant`).
+- SLAs are collected from the RITM **and** its catalog tasks. The *primary* SLA is
+  the definition named by `warranty.primary_sla`, else the longest SLA on the RITM
+  itself. The *current* SLA is the latest-started running SLA that is not the
+  primary.
+- "Día X de Y" is calendar days from `start_time` to `planned_end_time`; the bar
+  fill and the at-risk threshold (`warranty.at_risk_percent`) use the SLA engine's
+  `business_percentage`.
+
 ## The SDD state machine
 
 `NowCodeSDDOrchestrator` defines `PHASE_ORDER`, `PHASE_TRANSITIONS` and
@@ -146,7 +167,7 @@ immediately with `now-sdk transform --table <table>` and commit. Otherwise the n
 `install` silently overwrites it.
 
 `src/fluent/` is organized **by feature** (`chat/`, `sdd/`, `platform/`, `api/`,
-`integrations/`), not by artifact type. Files are named after what they define.
+`integrations/`, `warranty/`), not by artifact type. Files are named after what they define.
 Follow that when adding artifacts.
 
 Each Script Include is a pair: the `.now.ts` declares the record, the `.server.js`

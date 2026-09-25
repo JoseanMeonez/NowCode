@@ -180,5 +180,40 @@ RestApi({
             path: '/sessions/{session_id}',
             shortDescription: 'Update a session. Body: { name?, model?, context_scope? }',
         },
+        {
+            $id: Now.ID['now_code_api_list_warranty_requests'],
+            name: 'List Warranty Requests',
+            consumes: 'application/json',
+            script: Now.include('./operations/list-warranty-requests.js'),
+            produces: 'application/json',
+            path: '/warranty/requests',
+            shortDescription: 'Warranty requested items with primary and current SLA progress',
+            parameters: [
+                {
+                    $id: Now.ID['now_code_api_warranty_param_state'],
+                    name: 'state',
+                    shortDescription: 'open (default), closed or all',
+                },
+                {
+                    $id: Now.ID['now_code_api_warranty_param_q'],
+                    name: 'q',
+                    shortDescription: 'Search by RITM/REQ number, requested for or description',
+                },
+                {
+                    $id: Now.ID['now_code_api_warranty_param_limit'],
+                    name: 'limit',
+                    shortDescription: 'Maximum rows (default 200, max 500)',
+                },
+            ],
+        },
+        {
+            $id: Now.ID['now_code_api_get_warranty_request'],
+            name: 'Get Warranty Request',
+            consumes: 'application/json',
+            script: Now.include('./operations/get-warranty-request.js'),
+            produces: 'application/json',
+            path: '/warranty/requests/{ritm_id}',
+            shortDescription: 'One warranty requested item with every SLA, catalog tasks and variables',
+        },
     ],
 })

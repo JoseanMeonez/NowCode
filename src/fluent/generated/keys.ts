@@ -153,6 +153,38 @@ declare global {
                         table: 'sys_rest_message_fn_headers'
                         id: 'cfca6cd40a15405fb0a3bc771b398610'
                     }
+                    csp_read_contract_sla: {
+                        table: 'sys_scope_privilege'
+                        id: '898043035ed24965aef3e25fc5870f4e'
+                    }
+                    csp_read_item_option_new: {
+                        table: 'sys_scope_privilege'
+                        id: 'aaa843b47c75401da0c711ee3f34e18a'
+                    }
+                    csp_read_sc_cat_item: {
+                        table: 'sys_scope_privilege'
+                        id: '3da04f30a6b94c09a3847f6d6c38ab8b'
+                    }
+                    csp_read_sc_item_option: {
+                        table: 'sys_scope_privilege'
+                        id: '1e0a70bac9a94b71b13ac2f964c41ad4'
+                    }
+                    csp_read_sc_item_option_mtom: {
+                        table: 'sys_scope_privilege'
+                        id: '1d8f4075d71a48559b90e3478510287c'
+                    }
+                    csp_read_sc_req_item: {
+                        table: 'sys_scope_privilege'
+                        id: '571436456fc24b519342400c4fc33dd8'
+                    }
+                    csp_read_sc_task: {
+                        table: 'sys_scope_privilege'
+                        id: '13940ecb5ade47a4ae3c8a2322dddabc'
+                    }
+                    csp_read_task_sla: {
+                        table: 'sys_scope_privilege'
+                        id: '638a3a0becb449568a2bdd199c587916'
+                    }
                     csp_rest_get_error_message: {
                         table: 'sys_scope_privilege'
                         id: 'cdcce59993dd436c8a415eca8136b93c'
@@ -213,6 +245,14 @@ declare global {
                         table: 'sys_ws_operation'
                         id: 'a29d834d498c4b3794c65458a26cd1a3'
                     }
+                    now_code_api_get_warranty_request: {
+                        table: 'sys_ws_operation'
+                        id: '5751dd4839cd4d409436db9a64d87293'
+                    }
+                    now_code_api_list_warranty_requests: {
+                        table: 'sys_ws_operation'
+                        id: '12622c45c27d411183046c296902170b'
+                    }
                     now_code_api_test_connection: {
                         table: 'sys_ws_operation'
                         id: 'ac80c2ef1e504d6bbee20758094a324c'
@@ -225,9 +265,25 @@ declare global {
                         table: 'sys_ws_operation'
                         id: 'e1f85713bb6345c79ec9b23b9a760635'
                     }
+                    now_code_api_warranty_param_limit: {
+                        table: 'sys_ws_query_parameter'
+                        id: 'de840eefb34c4c878297f13b89e520aa'
+                    }
+                    now_code_api_warranty_param_q: {
+                        table: 'sys_ws_query_parameter'
+                        id: 'ec6ed136fc50493d873bac9b77691b34'
+                    }
+                    now_code_api_warranty_param_state: {
+                        table: 'sys_ws_query_parameter'
+                        id: '23225d2c45d545cfb6ced896c498991e'
+                    }
                     now_code_llm_client_si: {
                         table: 'sys_script_include'
                         id: '2945a932010b4566b3a4404e76dea157'
+                    }
+                    now_code_warranty_tracker_si: {
+                        table: 'sys_script_include'
+                        id: '5069a171f890403eb5f8cf37b77b919c'
                     }
                     package_json: {
                         table: 'sys_module'
@@ -252,6 +308,34 @@ declare global {
                     'styles.css': {
                         table: 'sys_ux_theme_asset'
                         id: '18404d90e15e40aabbfc34424aadbf24'
+                    }
+                    warranty_app_menu: {
+                        table: 'sys_app_application'
+                        id: 'ce32cce9611747b790b4840f7b149c88'
+                    }
+                    warranty_app_module_tracking: {
+                        table: 'sys_app_module'
+                        id: '8647a19aa3444ce7a0a56a62251eb433'
+                    }
+                    warranty_prop_at_risk_percent: {
+                        table: 'sys_properties'
+                        id: '956c6f7d2de94ece8935e58fea8ae712'
+                    }
+                    warranty_prop_catalog_items: {
+                        table: 'sys_properties'
+                        id: 'ba366afeba0e4be68b8569032e3bd5f4'
+                    }
+                    warranty_prop_item_name_match: {
+                        table: 'sys_properties'
+                        id: '1117ea4cce044a1791e4f5a7d76bf69f'
+                    }
+                    warranty_prop_primary_sla: {
+                        table: 'sys_properties'
+                        id: '4e7b09f58a8249c8b5f599ff1e2ca491'
+                    }
+                    'warranty/warranty.css': {
+                        table: 'sys_ux_theme_asset'
+                        id: '36d930b490534d0cb96de1cbf889196a'
                     }
                 }
                 composite: [
@@ -344,6 +428,13 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_ux_lib_asset'
+                        id: '044eb7dd49d74f4b8f9ae19a87efc69d'
+                        key: {
+                            name: 'x_1733631_now_code/warranty/main'
+                        }
+                    },
+                    {
                         table: 'sys_ui_list_element'
                         id: '046152acc3978310022a3342b40131db'
                         key: {
@@ -377,6 +468,14 @@ declare global {
                                 }
                             }
                             element: 'rules_verify'
+                        }
+                    },
+                    {
+                        table: 'sn_glider_source_artifact_m2m'
+                        id: '06dd079fc3424ac7888f1b7d20663cef'
+                        key: {
+                            application_file: '044eb7dd49d74f4b8f9ae19a87efc69d'
+                            source_artifact: 'f7ee1a8215234b598fac329af376228c'
                         }
                     },
                     {
@@ -1104,6 +1203,14 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_ws_query_parameter_map'
+                        id: '42e8b67ade33466d89fd92eb79249b66'
+                        key: {
+                            web_service_operation: '12622c45c27d411183046c296902170b'
+                            web_service_query_parameter: 'de840eefb34c4c878297f13b89e520aa'
+                        }
+                    },
+                    {
                         table: 'sys_dictionary'
                         id: '42ea82d794864f0c9d7a21e43e9c563b'
                         key: {
@@ -1266,6 +1373,14 @@ declare global {
                         key: {
                             name: 'x_1733631_now_code_openspec_config'
                             element: 'strict_tdd'
+                        }
+                    },
+                    {
+                        table: 'sn_glider_source_artifact_m2m'
+                        id: '55a30108a66d4e84b463ae11a3adb9f4'
+                        key: {
+                            application_file: 'b850ec6fbd7749558e175380b104c488'
+                            source_artifact: 'f7ee1a8215234b598fac329af376228c'
                         }
                     },
                     {
@@ -1441,6 +1556,14 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_ws_query_parameter_map'
+                        id: '71bf29ca488349c1bcd35df6b233b282'
+                        key: {
+                            web_service_operation: '12622c45c27d411183046c296902170b'
+                            web_service_query_parameter: '23225d2c45d545cfb6ced896c498991e'
+                        }
+                    },
+                    {
                         table: 'sys_choice_set'
                         id: '72db95b5f99b42b6b9039259debd13a7'
                         key: {
@@ -1461,6 +1584,14 @@ declare global {
                         key: {
                             logical_table_name: 'x_1733631_now_code_sdd_artifact'
                             col_name_string: 'parent_artifact'
+                        }
+                    },
+                    {
+                        table: 'sys_ws_query_parameter_map'
+                        id: '7b87821e72ea4a49aeaa3df2e477f070'
+                        key: {
+                            web_service_operation: '12622c45c27d411183046c296902170b'
+                            web_service_query_parameter: 'ec6ed136fc50493d873bac9b77691b34'
                         }
                     },
                     {
@@ -1604,6 +1735,14 @@ declare global {
                             name: 'x_1733631_now_code_sdd_artifact'
                             element: 'title'
                             language: 'en'
+                        }
+                    },
+                    {
+                        table: 'sn_glider_source_artifact_m2m'
+                        id: '882bc9fd434d414381756adf08ae4f1d'
+                        key: {
+                            application_file: 'd319da11d7da48c5992d1dda26096ccf'
+                            source_artifact: 'f7ee1a8215234b598fac329af376228c'
                         }
                     },
                     {
@@ -2207,6 +2346,13 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_ux_lib_asset'
+                        id: 'b850ec6fbd7749558e175380b104c488'
+                        key: {
+                            name: 'x_1733631_now_code/warranty/main.js.map'
+                        }
+                    },
+                    {
                         table: 'sys_choice'
                         id: 'ba51c3d5c99a4fc2b1419d1717cacdd6'
                         key: {
@@ -2518,6 +2664,13 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_ui_page'
+                        id: 'd319da11d7da48c5992d1dda26096ccf'
+                        key: {
+                            endpoint: 'x_1733631_now_code_warranty.do'
+                        }
+                    },
+                    {
                         table: 'sys_choice'
                         id: 'd36da97b298946ff97ca7e94703c569d'
                         key: {
@@ -2777,6 +2930,13 @@ declare global {
                             value: 'archive'
                             language: 'en'
                             dependent_value: 'NULL'
+                        }
+                    },
+                    {
+                        table: 'sn_glider_source_artifact'
+                        id: 'f7ee1a8215234b598fac329af376228c'
+                        key: {
+                            name: 'x_1733631_now_code_warranty.do - BYOUI Files'
                         }
                     },
                     {

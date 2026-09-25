@@ -163,3 +163,77 @@ CrossScopePrivilege({
     targetScope: 'global',
     targetType: 'scriptable',
 })
+
+// Global tables read by NowCodeWarrantyTracker
+
+CrossScopePrivilege({
+    $id: Now.ID['csp_read_sc_req_item'],
+    operation: 'read',
+    status: 'allowed',
+    targetName: 'sc_req_item',
+    targetScope: 'global',
+    targetType: 'sys_db_object',
+})
+
+CrossScopePrivilege({
+    $id: Now.ID['csp_read_sc_task'],
+    operation: 'read',
+    status: 'allowed',
+    targetName: 'sc_task',
+    targetScope: 'global',
+    targetType: 'sys_db_object',
+})
+
+CrossScopePrivilege({
+    $id: Now.ID['csp_read_sc_cat_item'],
+    operation: 'read',
+    status: 'allowed',
+    targetName: 'sc_cat_item',
+    targetScope: 'global',
+    targetType: 'sys_db_object',
+})
+
+CrossScopePrivilege({
+    $id: Now.ID['csp_read_task_sla'],
+    operation: 'read',
+    status: 'allowed',
+    targetName: 'task_sla',
+    targetScope: 'global',
+    targetType: 'sys_db_object',
+})
+
+CrossScopePrivilege({
+    $id: Now.ID['csp_read_contract_sla'],
+    operation: 'read',
+    status: 'allowed',
+    targetName: 'contract_sla',
+    targetScope: 'global',
+    targetType: 'sys_db_object',
+})
+
+CrossScopePrivilege({
+    $id: Now.ID['csp_read_sc_item_option_mtom'],
+    operation: 'read',
+    status: 'allowed',
+    targetName: 'sc_item_option_mtom',
+    targetScope: 'global',
+    targetType: 'sys_db_object',
+})
+
+CrossScopePrivilege({
+    $id: Now.ID['csp_read_sc_item_option'],
+    operation: 'read',
+    status: 'allowed',
+    targetName: 'sc_item_option',
+    targetScope: 'global',
+    targetType: 'sys_db_object',
+})
+
+CrossScopePrivilege({
+    $id: Now.ID['csp_read_item_option_new'],
+    operation: 'read',
+    status: 'allowed',
+    targetName: 'item_option_new',
+    targetScope: 'global',
+    targetType: 'sys_db_object',
+})
