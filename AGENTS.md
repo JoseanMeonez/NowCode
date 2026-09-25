@@ -17,11 +17,11 @@ The full product definition and project constitution live in
 ```bash
 now-sdk build                    # compile src/fluent -> dist/app (XML) + type check
 now-sdk build --frozenKeys       # same, but FAILS if keys.ts changed — pre-merge check
-now-sdk install -a dev440743     # deploy to the instance
+now-sdk install -a dev312366     # deploy to the instance
 npm run types                    # regenerate @types/servicenow from the instance schema
 
 # read any table on the instance (read-only; the SDK has no write/delete)
-now-sdk query <table> -q "<encoded query>" -f "field1,field2" -a dev440743
+now-sdk query <table> -q "<encoded query>" -f "field1,field2" -a dev312366
 
 now-sdk explain <topic>          # local SDK docs; `now-sdk explain` lists all topics
 ```
