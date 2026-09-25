@@ -75,7 +75,7 @@ NowCodeSDDOrchestrator.prototype = {
             this.session = {
                 sys_id: gr.getUniqueValue(),
                 name: gr.getValue('name'),
-                model: gr.getValue('model') || 'claude-sonnet-4-20250514',
+                model: gr.getValue('model') || '',
                 model_endpoint: gr.getValue('model_endpoint') || '',
                 sdd_phase: gr.getValue('sdd_phase') || 'none',
                 sdd_active:
@@ -452,13 +452,17 @@ NowCodeSDDOrchestrator.prototype = {
             // 2. Build prompt and gather history
             var systemPrompt = this.buildSystemPrompt(this.session.sdd_phase)
             var history = this.getSessionHistory()
-            var model = this.session.model || 'claude-sonnet-4-20250514'
+            var model = this.session.model || this._getLLMClient().getDefaultModel()
 
             // 3. Call the LLM
             var llmResponse = this.callLLM(systemPrompt, history, model)
 
             if (!llmResponse.success) {
-                return { success: false, message: 'LLM call failed: ' + llmResponse.error }
+                return {
+                    success: false,
+                    message: llmResponse.error,
+                    code: this._llmErrorCode(llmResponse),
+                }
             }
 
             // 4. Store assistant response
@@ -494,117 +498,38 @@ NowCodeSDDOrchestrator.prototype = {
     },
 
     /**
-     * Handles the actual API call, routing to the correct endpoint
-     * based on model family.
+     * Sends the conversation to the user's configured provider (OpenCode Go
+     * by default) through NowCodeLLMClient, which owns API key resolution and
+     * picks the wire format each model family needs:
      *
-     * Routing rules:
-     *   claude* / qwen*  → sendAnthropicMessage  (Anthropic messages format)
-     *   everything else   → sendChatCompletion    (OpenAI chat completions)
+     *   claude* / minimax* / qwen*   → /messages          (Anthropic shape)
+     *   gpt* / grok* / muse-spark*   → /responses         (OpenAI Responses)
+     *   everything else              → /chat/completions  (OpenAI shape)
+     *
+     * If the gateway reports a model is not served on that format, the client
+     * retries on the remaining ones.
      *
      * @param {string} systemPrompt
      * @param {Array<{role:string, content:string}>} messages
      * @param {string} model
-     * @returns {{ success: boolean, content?: string, tokens?: number, error?: string }}
+     * @returns {{ success: boolean, content?: string, tokens?: number,
+     *             error?: string, status?: number }}
      */
     callLLM: function (systemPrompt, messages, model) {
         try {
-            var restMessageName = 'NowCode Zen API'
-            var functionName
-            var requestBody
-            var modelLower = (model || '').toLowerCase()
-
-            if (modelLower.indexOf('claude') === 0 || modelLower.indexOf('qwen') === 0) {
-                // ── Anthropic messages format ────────────────
-                functionName = 'sendAnthropicMessage'
-
-                var anthropicMessages = []
-                for (var i = 0; i < messages.length; i++) {
-                    if (messages[i].role !== 'system') {
-                        anthropicMessages.push({
-                            role: messages[i].role,
-                            content: messages[i].content,
-                        })
-                    }
-                }
-
-                requestBody = JSON.stringify({
-                    model: model,
-                    max_tokens: 8192,
-                    system: systemPrompt,
-                    messages: anthropicMessages,
-                })
-            } else {
-                // ── OpenAI chat completions format ───────────
-                functionName = 'sendChatCompletion'
-
-                var chatMessages = [{ role: 'system', content: systemPrompt }]
-                for (var j = 0; j < messages.length; j++) {
-                    if (messages[j].role !== 'system') {
-                        chatMessages.push({
-                            role: messages[j].role,
-                            content: messages[j].content,
-                        })
-                    }
-                }
-
-                requestBody = JSON.stringify({
-                    model: model,
-                    messages: chatMessages,
-                    max_tokens: 8192,
-                })
-            }
-
-            // ── Execute the REST call ────────────────────────
-            var rm = new sn_ws.RESTMessageV2(restMessageName, functionName)
-            rm.setStringParameterNoEscape('body', requestBody)
-
-            // API key from system property
-            var apiKey = gs.getProperty('x_1733631_now_code.zen.api_key', '')
-            rm.setStringParameterNoEscape('apiKey', apiKey)
-
-            rm.setHttpTimeout(120000) // 2-minute timeout for LLM calls
-
-            var response = rm.execute()
-            var statusCode = response.getStatusCode()
-            var responseBody = response.getBody()
-
-            if (statusCode >= 200 && statusCode < 300) {
-                var parsed = JSON.parse(responseBody)
-                var content = ''
-                var tokens = 0
-
-                if (functionName === 'sendAnthropicMessage') {
-                    // Anthropic response: { content: [{ type: "text", text: "..." }], usage: {...} }
-                    if (parsed.content && parsed.content.length > 0) {
-                        content = parsed.content[0].text || ''
-                    }
-                    if (parsed.usage) {
-                        tokens =
-                            (parsed.usage.input_tokens || 0) + (parsed.usage.output_tokens || 0)
-                    }
-                } else {
-                    // OpenAI response: { choices: [{ message: { content: "..." } }], usage: {...} }
-                    if (parsed.choices && parsed.choices.length > 0) {
-                        content = parsed.choices[0].message.content || ''
-                    }
-                    if (parsed.usage) {
-                        tokens =
-                            (parsed.usage.prompt_tokens || 0) +
-                            (parsed.usage.completion_tokens || 0)
-                    }
-                }
-
-                return { success: true, content: content, tokens: tokens }
-            }
-
-            gs.error(
-                'NowCodeSDDOrchestrator.callLLM: HTTP ' + statusCode + ' — ' + responseBody
-            )
-            return { success: false, error: 'HTTP ' + statusCode + ': ' + responseBody }
+            return this._getLLMClient().chat(systemPrompt, messages, model)
         } catch (ex) {
             gs.error('NowCodeSDDOrchestrator.callLLM exception: ' + ex.getMessage())
             return { success: false, error: ex.getMessage() }
         }
+    },
+
+    /** @private LLM client bound to the calling user's provider settings and key */
+    _getLLMClient: function () {
+        if (!this.llmClient) {
+            this.llmClient = new NowCodeLLMClient()
+        }
+        return this.llmClient
     },
 
     // ═══════════════════════════════════════════════════════════
@@ -996,6 +921,14 @@ NowCodeSDDOrchestrator.prototype = {
     // ═══════════════════════════════════════════════════════════
     // Internal Helpers
     // ═══════════════════════════════════════════════════════════
+
+    /** @private Machine-readable reason for an LLM failure, used by the UI */
+    _llmErrorCode: function (llmResponse) {
+        if (!this._getLLMClient().getSettings().api_key) return 'no_api_key'
+        if (llmResponse.status === 401 || llmResponse.status === 403) return 'auth_failed'
+        if (llmResponse.status === 429) return 'rate_limited'
+        return 'llm_error'
+    },
 
     /** @private Persist a chat message record */
     _createMessage: function (role, content, phase, tokens, model) {

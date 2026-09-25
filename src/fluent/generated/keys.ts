@@ -153,6 +153,30 @@ declare global {
                         table: 'sys_rest_message_fn_headers'
                         id: 'cfca6cd40a15405fb0a3bc771b398610'
                     }
+                    csp_rest_get_error_message: {
+                        table: 'sys_scope_privilege'
+                        id: 'cdcce59993dd436c8a415eca8136b93c'
+                    }
+                    csp_rest_have_error: {
+                        table: 'sys_scope_privilege'
+                        id: 'e6a536148cb5404987a099fdd494ae01'
+                    }
+                    csp_rest_set_endpoint: {
+                        table: 'sys_scope_privilege'
+                        id: '015994cf0fdd4cd4a9fe28354d424699'
+                    }
+                    csp_rest_set_http_method: {
+                        table: 'sys_scope_privilege'
+                        id: '6adfa8425e304622b3cf4bf96efb317e'
+                    }
+                    csp_rest_set_request_body: {
+                        table: 'sys_scope_privilege'
+                        id: 'd601eb52fda14823983d50d56ef5e568'
+                    }
+                    csp_rest_set_request_header: {
+                        table: 'sys_scope_privilege'
+                        id: '6d43d5e92cab45f2a76ebea65565acfa'
+                    }
                     d59cac9810b346bbbf47d206e860082f: {
                         table: 'sys_rest_message_fn_headers'
                         id: 'd59cac9810b346bbbf47d206e860082f'
@@ -185,9 +209,45 @@ declare global {
                         table: 'sys_script_include'
                         id: 'f4be9fedfeac4d24a6796aca51335fb8'
                     }
+                    now_code_api_get_settings: {
+                        table: 'sys_ws_operation'
+                        id: 'a29d834d498c4b3794c65458a26cd1a3'
+                    }
+                    now_code_api_test_connection: {
+                        table: 'sys_ws_operation'
+                        id: 'ac80c2ef1e504d6bbee20758094a324c'
+                    }
+                    now_code_api_update_session: {
+                        table: 'sys_ws_operation'
+                        id: 'da8d227205eb43e6aaa06357a0e98f6f'
+                    }
+                    now_code_api_update_settings: {
+                        table: 'sys_ws_operation'
+                        id: 'e1f85713bb6345c79ec9b23b9a760635'
+                    }
+                    now_code_llm_client_si: {
+                        table: 'sys_script_include'
+                        id: '2945a932010b4566b3a4404e76dea157'
+                    }
                     package_json: {
                         table: 'sys_module'
                         id: '1471f70f74ca4055add14b230d746146'
+                    }
+                    provider_config_create_acl: {
+                        table: 'sys_security_acl'
+                        id: '3e34d9109bac4119b08f05882a7a2f57'
+                    }
+                    provider_config_delete_acl: {
+                        table: 'sys_security_acl'
+                        id: 'd9e9b070359445b29161283a7c7cc242'
+                    }
+                    provider_config_read_acl: {
+                        table: 'sys_security_acl'
+                        id: 'cea685c9569441d4887514736ed9f712'
+                    }
+                    provider_config_write_acl: {
+                        table: 'sys_security_acl'
+                        id: '5657bd76f4ff449795fab15eec234fcb'
                     }
                     'styles.css': {
                         table: 'sys_ux_theme_asset'
@@ -273,6 +333,14 @@ declare global {
                                 }
                             }
                             element: 'project_context'
+                        }
+                    },
+                    {
+                        table: 'sys_dictionary'
+                        id: '03535fd6c44648d8a42e31f6289ca993'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'user'
                         }
                     },
                     {
@@ -375,6 +443,14 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_dictionary'
+                        id: '0a9559e1ac734ddcb79c345c8f0c9137'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'provider'
+                        }
+                    },
+                    {
                         table: 'sys_ui_list_element'
                         id: '0c6152acc3978310022a3342b40131dc'
                         key: {
@@ -408,6 +484,17 @@ declare global {
                             name: 'x_1733631_now_code_sdd_artifact'
                             element: 'phase'
                             value: 'verify'
+                            language: 'en'
+                            dependent_value: 'NULL'
+                        }
+                    },
+                    {
+                        table: 'sys_choice'
+                        id: '0dfe900795604854a8ea47b5472c99e0'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'provider'
+                            value: 'opencode_zen'
                             language: 'en'
                             dependent_value: 'NULL'
                         }
@@ -691,6 +778,29 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_ui_list_element'
+                        id: '2617381d42b94c32b923b81b2912fa3e'
+                        key: {
+                            list_id: {
+                                id: 'e02c4cab6fb34b4e832f2fec6c52e9a9'
+                                key: {
+                                    name: 'x_1733631_now_code_provider_config'
+                                    view: {
+                                        id: 'Default view'
+                                        key: {
+                                            name: 'NULL'
+                                        }
+                                    }
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'default_model'
+                        }
+                    },
+                    {
                         table: 'sys_dictionary'
                         id: '26238012e2674ef1992e738cec0038b0'
                         key: {
@@ -776,6 +886,13 @@ declare global {
                         }
                     },
                     {
+                        table: 'ua_table_licensing_config'
+                        id: '2f6f7b49846749c3aa9c5b446afa3a7c'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                        }
+                    },
+                    {
                         table: 'sys_choice'
                         id: '2f870abc6cba4fed9183b1ac5bc8d624'
                         key: {
@@ -784,6 +901,15 @@ declare global {
                             value: 'onboard'
                             language: 'en'
                             dependent_value: 'NULL'
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
+                        id: '3199576bc12f4db188117cd3f55ac84f'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'provider'
+                            language: 'en'
                         }
                     },
                     {
@@ -885,6 +1011,14 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_dictionary'
+                        id: '3b15c294c8844348ad8f5047911a6585'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'default_model'
+                        }
+                    },
+                    {
                         table: 'sys_ui_list_element'
                         id: '3b6196acc3978310022a3342b4013133'
                         key: {
@@ -978,6 +1112,14 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_choice_set'
+                        id: '4355ae7bb1bb41b69904553d0fb4c08f'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'provider'
+                        }
+                    },
+                    {
                         table: 'sys_documentation'
                         id: '47dd0759ee5f460097f413b8b4b96757'
                         key: {
@@ -1068,6 +1210,29 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_ui_list_element'
+                        id: '527f02ad166441b0a3ba641a7d903214'
+                        key: {
+                            list_id: {
+                                id: 'e02c4cab6fb34b4e832f2fec6c52e9a9'
+                                key: {
+                                    name: 'x_1733631_now_code_provider_config'
+                                    view: {
+                                        id: 'Default view'
+                                        key: {
+                                            name: 'NULL'
+                                        }
+                                    }
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'base_url'
+                        }
+                    },
+                    {
                         table: 'sys_choice'
                         id: '52d0571b0fe347508b102a56bde59274'
                         key: {
@@ -1101,6 +1266,47 @@ declare global {
                         key: {
                             name: 'x_1733631_now_code_openspec_config'
                             element: 'strict_tdd'
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
+                        id: '59027b89df484ba28588097f912a55dd'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'max_tokens'
+                            language: 'en'
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
+                        id: '595e9db3ea684c478224789901b76518'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'default_model'
+                            language: 'en'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: '5b6c830d16e94640a9a3dbc4bd75c050'
+                        key: {
+                            list_id: {
+                                id: 'e02c4cab6fb34b4e832f2fec6c52e9a9'
+                                key: {
+                                    name: 'x_1733631_now_code_provider_config'
+                                    view: {
+                                        id: 'Default view'
+                                        key: {
+                                            name: 'NULL'
+                                        }
+                                    }
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'max_tokens'
                         }
                     },
                     {
@@ -1272,6 +1478,14 @@ declare global {
                         key: {
                             name: 'x_1733631_now_code_chat_message'
                             element: 'role'
+                        }
+                    },
+                    {
+                        table: 'sys_dictionary'
+                        id: '805bca3031234c2aad4405a4d15b768c'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'base_url'
                         }
                     },
                     {
@@ -1479,6 +1693,14 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_dictionary'
+                        id: '8d20d1edc83c48a7bcd4f0a92fa695ba'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'max_tokens'
+                        }
+                    },
+                    {
                         table: 'sys_ui_list_element'
                         id: '8e21166cc3978310022a3342b4013117'
                         key: {
@@ -1606,6 +1828,17 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_choice'
+                        id: '96ccf5a74fc741f58fc6d7310f6279c3'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'provider'
+                            value: 'custom'
+                            language: 'en'
+                            dependent_value: 'NULL'
+                        }
+                    },
+                    {
                         table: 'sys_documentation'
                         id: '988b712c0ca945dea2dc71e916dd7a54'
                         key: {
@@ -1674,6 +1907,14 @@ declare global {
                             name: 'x_1733631_now_code_sdd_artifact'
                             element: 'approved_by'
                             language: 'en'
+                        }
+                    },
+                    {
+                        table: 'sys_dictionary'
+                        id: '9c805c05dd0a4bdc98084024afe244ac'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'NULL'
                         }
                     },
                     {
@@ -1767,6 +2008,29 @@ declare global {
                         key: {
                             name: 'x_1733631_now_code_chat_session'
                             element: 'model'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: 'a8454c639cdb41d5b1c5189d39b592c5'
+                        key: {
+                            list_id: {
+                                id: 'e02c4cab6fb34b4e832f2fec6c52e9a9'
+                                key: {
+                                    name: 'x_1733631_now_code_provider_config'
+                                    view: {
+                                        id: 'Default view'
+                                        key: {
+                                            name: 'NULL'
+                                        }
+                                    }
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'api_key_hint'
                         }
                     },
                     {
@@ -1900,6 +2164,14 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_dictionary'
+                        id: 'b72fdbaaf8284531b7b387ba4e613317'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'api_key_hint'
+                        }
+                    },
+                    {
                         table: 'sys_ui_list_element'
                         id: 'b76196acc3978310022a3342b4013132'
                         key: {
@@ -1946,6 +2218,14 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_index'
+                        id: 'ba5d091172a4401cb3f2c3f1ff3d430b'
+                        key: {
+                            logical_table_name: 'x_1733631_now_code_provider_config'
+                            col_name_string: 'user'
+                        }
+                    },
+                    {
                         table: 'sys_choice_set'
                         id: 'ba96df7fb2664771b0396e1252694e9e'
                         key: {
@@ -1962,6 +2242,29 @@ declare global {
                             value: 'spec'
                             language: 'en'
                             dependent_value: 'NULL'
+                        }
+                    },
+                    {
+                        table: 'sys_ui_list_element'
+                        id: 'bb3bb8a5fae9427caa1e5fc922b2e7aa'
+                        key: {
+                            list_id: {
+                                id: 'e02c4cab6fb34b4e832f2fec6c52e9a9'
+                                key: {
+                                    name: 'x_1733631_now_code_provider_config'
+                                    view: {
+                                        id: 'Default view'
+                                        key: {
+                                            name: 'NULL'
+                                        }
+                                    }
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'user'
                         }
                     },
                     {
@@ -2045,6 +2348,15 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_documentation'
+                        id: 'c0d2cb100bf74a6eb1af521866bebc60'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'api_key'
+                            language: 'en'
+                        }
+                    },
+                    {
                         table: 'sn_glider_source_artifact'
                         id: 'c1d4522b7187465aad88f9bee94f36f1'
                         key: {
@@ -2122,6 +2434,15 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_documentation'
+                        id: 'c9fb9b51945d452ab207dae8688db475'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'user'
+                            language: 'en'
+                        }
+                    },
+                    {
                         table: 'sys_db_object'
                         id: 'cb84c3655c314ef9be5c94b244f34a60'
                         key: {
@@ -2174,6 +2495,29 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_ui_list_element'
+                        id: 'd2f172986d874b1c90ad98de850404de'
+                        key: {
+                            list_id: {
+                                id: 'e02c4cab6fb34b4e832f2fec6c52e9a9'
+                                key: {
+                                    name: 'x_1733631_now_code_provider_config'
+                                    view: {
+                                        id: 'Default view'
+                                        key: {
+                                            name: 'NULL'
+                                        }
+                                    }
+                                    sys_domain: 'global'
+                                    element: 'NULL'
+                                    relationship: 'NULL'
+                                    parent: 'NULL'
+                                }
+                            }
+                            element: 'provider'
+                        }
+                    },
+                    {
                         table: 'sys_choice'
                         id: 'd36da97b298946ff97ca7e94703c569d'
                         key: {
@@ -2185,11 +2529,31 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_choice'
+                        id: 'd436fb42db35485382f84d7f37e79caf'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'provider'
+                            value: 'opencode_go'
+                            language: 'en'
+                            dependent_value: 'NULL'
+                        }
+                    },
+                    {
                         table: 'sys_dictionary'
                         id: 'd5b5f3288afe480dbff6adaf47e1bf5a'
                         key: {
                             name: 'x_1733631_now_code_openspec_config'
                             element: 'NULL'
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
+                        id: 'd702d0905ebb40afb1fb0918ecc54c7e'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'NULL'
+                            language: 'en'
                         }
                     },
                     {
@@ -2245,6 +2609,23 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_ui_list'
+                        id: 'e02c4cab6fb34b4e832f2fec6c52e9a9'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            view: {
+                                id: 'Default view'
+                                key: {
+                                    name: 'NULL'
+                                }
+                            }
+                            sys_domain: 'global'
+                            element: 'NULL'
+                            relationship: 'NULL'
+                            parent: 'NULL'
+                        }
+                    },
+                    {
                         table: 'sys_choice'
                         id: 'e0bc2c896a0e4930b6a47781b45d9753'
                         key: {
@@ -2290,6 +2671,32 @@ declare global {
                         }
                     },
                     {
+                        table: 'sys_dictionary'
+                        id: 'e6a9d76756d448af96acd964cbbcd8d2'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'api_key'
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
+                        id: 'e82ee0e0a42c4c76b866755f439d0505'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'api_key_hint'
+                            language: 'en'
+                        }
+                    },
+                    {
+                        table: 'sys_documentation'
+                        id: 'e95d82f8c52c4abca9ed7dfddba3d39e'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
+                            element: 'base_url'
+                            language: 'en'
+                        }
+                    },
+                    {
                         table: 'sys_documentation'
                         id: 'ea19a6e9c04848fd976c78e31d31e8b2'
                         key: {
@@ -2332,6 +2739,13 @@ declare global {
                         key: {
                             logical_table_name: 'x_1733631_now_code_sdd_artifact'
                             col_name_string: 'session'
+                        }
+                    },
+                    {
+                        table: 'sys_db_object'
+                        id: 'f1ca003b00e945bfa8bd89bc3d9ecdd7'
+                        key: {
+                            name: 'x_1733631_now_code_provider_config'
                         }
                     },
                     {

@@ -37,11 +37,23 @@ async function apiCall(path, opts) {
   if (!res.ok) {
     var errData = {};
     try { errData = await res.json(); } catch (e) { /* ignore */ }
-    throw new Error(errData.error ? errData.error.message : ('API Error ' + res.status));
+    // Scripted REST wraps setBody() payloads in { result }; platform errors use { error: { message } }
+    var payload = errData.result !== undefined ? errData.result : errData;
+    var errMsg = payload && payload.error
+      ? (typeof payload.error === 'string' ? payload.error : payload.error.message)
+      : null;
+    var err = new Error(errMsg || ('API Error ' + res.status));
+    err.code = payload && payload.code;
+    err.status = res.status;
+    throw err;
   }
   if (res.status === 204) return null;
   var json = await res.json();
   return json.result !== undefined ? json.result : json;
+}
+
+function isSddActive(session) {
+  return !!session && (session.sdd_active === 'true' || session.sdd_active === true);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -65,35 +77,32 @@ function formatTime(dateStr) {
 /* ═══════════════════════════════════════════════════════════
    Simple Markdown Renderer
    ═══════════════════════════════════════════════════════════ */
+var INLINE_PATTERNS = [
+  { re: /`([^`]+)`/, render: function(m, k) { return React.createElement('code', { key: k, className: 'nc-inline-code' }, m[1]); } },
+  { re: /\*\*([^*]+)\*\*/, render: function(m, k) { return React.createElement('strong', { key: k }, formatInline(m[1])); } },
+  { re: /\*([^*\s][^*]*)\*/, render: function(m, k) { return React.createElement('em', { key: k }, formatInline(m[1])); } }
+];
+
 function formatInline(text) {
   var parts = [];
   var remaining = text;
   var k = 0;
   while (remaining.length > 0) {
-    var m;
-    m = remaining.match(/^(.*?)`([^`]+)`(.*)$/s);
-    if (m) {
-      if (m[1]) parts.push(React.createElement('span', { key: k++ }, m[1]));
-      parts.push(React.createElement('code', { key: k++, className: 'nc-inline-code' }, m[2]));
-      remaining = m[3];
-      continue;
+    // Take the earliest match so "**a** and `b`" renders both
+    var best = null;
+    INLINE_PATTERNS.forEach(function(p) {
+      var m = p.re.exec(remaining);
+      if (m && (!best || m.index < best.m.index)) best = { m: m, p: p };
+    });
+    if (!best) {
+      parts.push(React.createElement('span', { key: k++ }, remaining));
+      break;
     }
-    m = remaining.match(/^(.*?)\*\*([^*]+)\*\*(.*)$/s);
-    if (m) {
-      if (m[1]) parts.push(React.createElement('span', { key: k++ }, m[1]));
-      parts.push(React.createElement('strong', { key: k++ }, m[2]));
-      remaining = m[3];
-      continue;
+    if (best.m.index > 0) {
+      parts.push(React.createElement('span', { key: k++ }, remaining.slice(0, best.m.index)));
     }
-    m = remaining.match(/^(.*?)\*([^*]+)\*(.*)$/s);
-    if (m) {
-      if (m[1]) parts.push(React.createElement('span', { key: k++ }, m[1]));
-      parts.push(React.createElement('em', { key: k++ }, m[2]));
-      remaining = m[3];
-      continue;
-    }
-    parts.push(React.createElement('span', { key: k++ }, remaining));
-    break;
+    parts.push(best.p.render(best.m, k++));
+    remaining = remaining.slice(best.m.index + best.m[0].length);
   }
   return parts.length === 1 ? parts[0] : parts;
 }
@@ -219,8 +228,8 @@ function SDDArtifactCard(props) {
           <span className="nc-badge" style={{ backgroundColor: phase.color + '22', color: phase.color }}>
             {phase.label}
           </span>
-          <span className={'nc-badge nc-badge--' + (artifact.status || 'draft')}>
-            {artifact.status || 'draft'}
+          <span className={'nc-badge nc-badge--' + (artifact.status === 'pending_review' ? 'pending' : (artifact.status || 'draft'))}>
+            {(artifact.status || 'draft').replace('_', ' ')}
           </span>
           <span className="nc-artifact-chevron">{isExpanded ? '\u25BE' : '\u25B8'}</span>
         </div>
@@ -228,7 +237,7 @@ function SDDArtifactCard(props) {
       {isExpanded && (
         <div className="nc-artifact-body">
           <pre className="nc-artifact-content">{artifact.content}</pre>
-          {artifact.status === 'pending' && (
+          {artifact.status === 'pending_review' && (
             <div className="nc-artifact-actions">
               <button className="nc-btn nc-btn--approve"
                 onClick={function() { onApprove(artifact.sys_id); }}>
@@ -253,9 +262,7 @@ function SessionItem(props) {
   var session = props.session;
   var active = props.active;
   var onClick = props.onClick;
-  var phase = (session.sdd_active === 'true' || session.sdd_active === true)
-    ? getPhaseInfo(session.sdd_phase)
-    : null;
+  var phase = isSddActive(session) ? getPhaseInfo(session.sdd_phase) : null;
 
   return (
     <div className={'nc-session-item' + (active ? ' nc-session-item--active' : '')}
@@ -269,7 +276,7 @@ function SessionItem(props) {
             {phase.label}
           </span>
         )}
-        <span className="nc-session-time">{formatTime(session.sys_created_on)}</span>
+        <span className="nc-session-time">{formatTime(session.updated_on || session.created_on)}</span>
       </div>
     </div>
   );
@@ -283,13 +290,16 @@ function SessionSidebar(props) {
   var activeSessionId = props.activeSessionId;
   var onSelectSession = props.onSelectSession;
   var onNewSession = props.onNewSession;
+  var onOpenSettings = props.onOpenSettings;
+  var settings = props.settings;
 
   var today = new Date().toDateString();
-  var todaySessions = sessions.filter(function(s) {
-    return new Date(s.sys_created_on).toDateString() === today;
+  var activeSessions = sessions.filter(function(s) { return s.status !== 'archived'; });
+  var todaySessions = activeSessions.filter(function(s) {
+    return new Date(s.updated_on || s.created_on).toDateString() === today;
   });
-  var earlierSessions = sessions.filter(function(s) {
-    return new Date(s.sys_created_on).toDateString() !== today;
+  var earlierSessions = activeSessions.filter(function(s) {
+    return new Date(s.updated_on || s.created_on).toDateString() !== today;
   });
 
   return (
@@ -329,13 +339,138 @@ function SessionSidebar(props) {
             })}
           </div>
         )}
-        {sessions.length === 0 && (
+        {activeSessions.length === 0 && (
           <div className="nc-empty-state">
             No sessions yet. Click <strong>+ New</strong> to start a conversation.
           </div>
         )}
       </div>
+      <div className="nc-sidebar-footer">
+        <button className="nc-provider-status" onClick={onOpenSettings}
+          aria-label="Open provider settings">
+          <span className={'nc-status-dot' + (settings && settings.has_api_key ? ' nc-status-dot--ok' : '')}
+            aria-hidden="true"></span>
+          <span className="nc-provider-status-text">
+            <span className="nc-provider-status-name">
+              {settings ? settings.provider_label : 'Provider'}
+            </span>
+            <span className="nc-provider-status-sub">
+              {settings && settings.has_api_key
+                ? 'API key ' + (settings.api_key_hint || 'configured')
+                : 'No API key — click to connect'}
+            </span>
+          </span>
+          <span className="nc-provider-status-gear" aria-hidden="true">{'\u2699'}</span>
+        </button>
+      </div>
     </aside>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Model Picker
+   ═══════════════════════════════════════════════════════════ */
+function ModelPicker(props) {
+  var models = props.models;
+  var selectedModel = props.selectedModel;
+  var onModelChange = props.onModelChange;
+  var disabled = props.disabled;
+  var openState = useState(false);
+  var open = openState[0];
+  var setOpen = openState[1];
+  var filterState = useState('');
+  var filter = filterState[0];
+  var setFilter = filterState[1];
+  var rootRef = useRef(null);
+
+  useEffect(function() {
+    if (!open) return undefined;
+    function onDocClick(e) {
+      if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('mousedown', onDocClick);
+    return function() { document.removeEventListener('mousedown', onDocClick); };
+  }, [open]);
+
+  var needle = filter.trim().toLowerCase();
+  var visible = models.filter(function(m) {
+    if (!needle) return true;
+    return (m.id + ' ' + (m.name || '') + ' ' + (m.provider || '')).toLowerCase().indexOf(needle) !== -1;
+  });
+
+  // Group by vendor, keeping first-seen order
+  var groups = [];
+  var byVendor = {};
+  visible.forEach(function(m) {
+    var vendor = m.provider || 'Other';
+    if (!byVendor[vendor]) {
+      byVendor[vendor] = { vendor: vendor, models: [] };
+      groups.push(byVendor[vendor]);
+    }
+    byVendor[vendor].models.push(m);
+  });
+
+  var selected = models.find(function(m) { return m.id === selectedModel; });
+  var label = selected ? (selected.name || selected.id) : (selectedModel || 'Select model');
+
+  function choose(id) {
+    onModelChange(id);
+    setOpen(false);
+    setFilter('');
+  }
+
+  return (
+    <div className="nc-model-selector" ref={rootRef}>
+      <button className="nc-btn nc-btn--model-select"
+        onClick={function() { setOpen(!open); }}
+        disabled={disabled}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        title={selectedModel}>
+        <span className="nc-model-select-label">{label}</span>
+        <span className="nc-chevron">{'▾'}</span>
+      </button>
+      {open && (
+        <div className="nc-dropdown nc-dropdown--models">
+          <input className="nc-input nc-dropdown-search" type="text" autoFocus
+            placeholder="Search models..."
+            value={filter}
+            onChange={function(e) { setFilter(e.target.value); }}
+            onKeyDown={function(e) {
+              e.stopPropagation();
+              if (e.key === 'Escape') setOpen(false);
+              if (e.key === 'Enter' && visible.length > 0) choose(visible[0].id);
+            }}
+            onKeyUp={function(e) { e.stopPropagation(); }}
+            onKeyPress={function(e) { e.stopPropagation(); }} />
+          <div className="nc-dropdown-list" role="listbox">
+            {groups.map(function(g) {
+              return (
+                <div key={g.vendor} className="nc-dropdown-group">
+                  <div className="nc-dropdown-group-label">{g.vendor}</div>
+                  {g.models.map(function(m) {
+                    return (
+                      <div key={m.id} role="option"
+                        aria-selected={m.id === selectedModel}
+                        className={'nc-dropdown-item' + (m.id === selectedModel ? ' nc-dropdown-item--selected' : '')}
+                        onClick={function() { choose(m.id); }}>
+                        <span>{m.name || m.id}</span>
+                        <span className="nc-dropdown-item-sub">{m.id}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+            {visible.length === 0 && (
+              <div className="nc-dropdown-item nc-dropdown-item--empty">
+                {models.length === 0 ? 'No models available' : 'No matches'}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -344,22 +479,13 @@ function SessionSidebar(props) {
    ═══════════════════════════════════════════════════════════ */
 function TopBar(props) {
   var session = props.session;
-  var models = props.models;
-  var selectedModel = props.selectedModel;
-  var onModelChange = props.onModelChange;
-  var dropdownState = useState(false);
-  var dropdownOpen = dropdownState[0];
-  var setDropdownOpen = dropdownState[1];
-
-  var phase = (session && (session.sdd_active === 'true' || session.sdd_active === true))
-    ? getPhaseInfo(session.sdd_phase)
-    : null;
+  var phase = isSddActive(session) ? getPhaseInfo(session.sdd_phase) : null;
 
   return (
     <header className="nc-topbar" role="banner">
       <div className="nc-topbar-left">
         <span className="nc-topbar-title">
-          {session ? session.name : 'Select a session'}
+          {session ? session.name : 'New conversation'}
         </span>
         {session && session.context_scope && (
           <span className="nc-badge nc-badge--scope">{session.context_scope}</span>
@@ -374,37 +500,23 @@ function TopBar(props) {
             <SDDPhaseDots currentPhase={session.sdd_phase} />
           </div>
         )}
-        <div className="nc-model-selector">
-          <button className="nc-btn nc-btn--model-select"
-            onClick={function() { setDropdownOpen(!dropdownOpen); }}
-            aria-expanded={dropdownOpen}
-            aria-haspopup="listbox">
-            {'\uD83E\uDD16'} {selectedModel || 'Select model'}
-            <span className="nc-chevron">{'\u25BE'}</span>
+        {session && session.total_tokens > 0 && (
+          <span className="nc-topbar-tokens" title="Tokens used in this session">
+            {session.total_tokens.toLocaleString()} tok
+          </span>
+        )}
+        <ModelPicker
+          models={props.models}
+          selectedModel={props.selectedModel}
+          onModelChange={props.onModelChange}
+          disabled={props.busy}
+        />
+        {session && (
+          <button className="nc-btn nc-btn--icon" onClick={props.onArchive}
+            title="Archive session" aria-label="Archive session" disabled={props.busy}>
+            {'🗄'}
           </button>
-          {dropdownOpen && (
-            <div className="nc-dropdown" role="listbox">
-              {models.map(function(m) {
-                var id = m.id || m.name;
-                return (
-                  <div key={id} role="option"
-                    aria-selected={id === selectedModel}
-                    className={'nc-dropdown-item' + (id === selectedModel ? ' nc-dropdown-item--selected' : '')}
-                    onClick={function() {
-                      onModelChange(id);
-                      setDropdownOpen(false);
-                    }}>
-                    <span>{m.name || m.id}</span>
-                    {m.provider && <span className="nc-dropdown-item-sub">{m.provider}</span>}
-                  </div>
-                );
-              })}
-              {models.length === 0 && (
-                <div className="nc-dropdown-item nc-dropdown-item--empty">No models available</div>
-              )}
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </header>
   );
@@ -426,7 +538,7 @@ function ChatMessage(props) {
   }
 
   var isUser = role === 'user';
-  var phase = message.sdd_phase ? getPhaseInfo(message.sdd_phase) : null;
+  var phase = message.sdd_phase && message.sdd_phase !== 'none' ? getPhaseInfo(message.sdd_phase) : null;
 
   return (
     <div className={'nc-message nc-message--' + role}>
@@ -465,6 +577,8 @@ function ChatArea(props) {
   var loading = props.loading;
   var onApproveArtifact = props.onApproveArtifact;
   var onRejectArtifact = props.onRejectArtifact;
+  var needsSetup = props.needsSetup;
+  var onOpenSettings = props.onOpenSettings;
   var scrollRef = useRef(null);
 
   useEffect(function() {
@@ -480,6 +594,18 @@ function ChatArea(props) {
           <div className="nc-welcome-icon" aria-hidden="true">{'\u27E8/\u27E9'}</div>
           <h2>Welcome to Now Code</h2>
           <p>Your AI development assistant for ServiceNow</p>
+          {needsSetup && (
+            <div className="nc-setup-card">
+              <div className="nc-setup-card-title">Connect your OpenCode Go subscription</div>
+              <div className="nc-setup-card-text">
+                Paste your API key once and every model in your plan becomes available here.
+                The key is stored encrypted on this instance and never sent to the browser.
+              </div>
+              <button className="nc-btn nc-btn--primary" onClick={onOpenSettings}>
+                Add API key
+              </button>
+            </div>
+          )}
           <div className="nc-welcome-hints">
             <div className="nc-hint">{'\uD83D\uDCAC'} Chat about code and architecture</div>
             <div className="nc-hint">{'\uD83D\uDCD0'} Use SDD for structured development</div>
@@ -525,7 +651,11 @@ function MessageInput(props) {
   var onSend = props.onSend;
   var disabled = props.disabled;
   var sddActive = props.sddActive;
-  var hasPendingProposal = props.hasPendingProposal;
+  var hasSession = props.hasSession;
+  var canAdvance = props.canAdvance;
+  var pendingProposalId = props.pendingProposalId;
+  var onApprove = props.onApprove;
+  var onReject = props.onReject;
   var valueState = useState('');
   var value = valueState[0];
   var setValue = valueState[1];
@@ -559,29 +689,29 @@ function MessageInput(props) {
 
   return (
     <div className="nc-input-area">
-      {(sddActive || hasPendingProposal) && (
+      {hasSession && (
         <div className="nc-quick-actions">
-          {sddActive && (
-            <button className="nc-btn nc-btn--quick"
-              onClick={function() { onSend('Advance to next SDD phase', 'next_phase'); }}>
-              {'\u23ED'} Next Phase
-            </button>
-          )}
           {!sddActive && (
-            <button className="nc-btn nc-btn--quick"
-              onClick={function() { onSend('Start SDD process', 'start_sdd'); }}>
+            <button className="nc-btn nc-btn--quick" disabled={disabled}
+              onClick={function() { onSend('Start the SDD process for this conversation.', 'start_sdd'); }}>
               {'\uD83D\uDE80'} Start SDD
             </button>
           )}
-          {hasPendingProposal && (
+          {sddActive && !pendingProposalId && canAdvance && (
+            <button className="nc-btn nc-btn--quick" disabled={disabled}
+              onClick={function() { onSend('Advance to the next SDD phase and produce its artifact.', 'next_phase'); }}>
+              {'\u23ED'} Next Phase
+            </button>
+          )}
+          {pendingProposalId && (
             <React.Fragment>
-              <button className="nc-btn nc-btn--approve"
-                onClick={function() { onSend('Approve proposal', 'approve_proposal'); }}>
-                {'\u2713'} Approve
+              <button className="nc-btn nc-btn--approve" disabled={disabled}
+                onClick={function() { onApprove(pendingProposalId); }}>
+                {'\u2713'} Approve proposal
               </button>
-              <button className="nc-btn nc-btn--reject"
-                onClick={function() { onSend('Reject proposal', 'reject_proposal'); }}>
-                {'\u2717'} Reject
+              <button className="nc-btn nc-btn--reject" disabled={disabled}
+                onClick={function() { onReject(pendingProposalId); }}>
+                {'\u2717'} Reject proposal
               </button>
             </React.Fragment>
           )}
@@ -589,7 +719,7 @@ function MessageInput(props) {
       )}
       <div className="nc-input-row">
         <textarea ref={textareaRef} className="nc-textarea"
-          placeholder="Ask anything... a session will be created automatically"
+          placeholder={props.placeholder || 'Ask anything... a session will be created automatically'}
           value={value} onChange={handleInput} onKeyDown={handleKeyDown}
           onKeyUp={function(e) { e.stopPropagation(); }}
           onKeyPress={function(e) { e.stopPropagation(); }}
@@ -613,6 +743,7 @@ function NewSessionModal(props) {
   var models = props.models;
   var onClose = props.onClose;
   var onCreate = props.onCreate;
+  var defaultModel = props.defaultModel;
   var nameState = useState('');
   var name = nameState[0];
   var setName = nameState[1];
@@ -646,6 +777,10 @@ function NewSessionModal(props) {
 
   var stopProp = function(e) { e.stopPropagation(); };
 
+  useEffect(function() {
+    if (open) setModel(defaultModel || '');
+  }, [open, defaultModel]);
+
   if (!open) return null;
 
   return (
@@ -672,8 +807,7 @@ function NewSessionModal(props) {
               onChange={function(e) { setModel(e.target.value); }}>
               <option value="">Default</option>
               {models.map(function(m) {
-                var id = m.id || m.name;
-                return <option key={id} value={id}>{m.name || m.id}</option>;
+                return <option key={m.id} value={m.id}>{(m.provider ? m.provider + ' \u00B7 ' : '') + (m.name || m.id)}</option>;
               })}
             </select>
           </div>
@@ -690,6 +824,225 @@ function NewSessionModal(props) {
           <button className="nc-btn nc-btn--primary" onClick={handleCreate}
             disabled={!name.trim()}>
             Create Session
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Settings Modal — provider + API key
+   ═══════════════════════════════════════════════════════════ */
+function SettingsModal(props) {
+  var open = props.open;
+  var settings = props.settings;
+  var models = props.models;
+  var onClose = props.onClose;
+  var onSaved = props.onSaved;
+  var reason = props.reason;
+
+  var providerState = useState('opencode_go');
+  var provider = providerState[0];
+  var setProvider = providerState[1];
+  var keyState = useState('');
+  var apiKey = keyState[0];
+  var setApiKey = keyState[1];
+  var baseUrlState = useState('');
+  var baseUrl = baseUrlState[0];
+  var setBaseUrl = baseUrlState[1];
+  var modelState = useState('');
+  var defaultModel = modelState[0];
+  var setDefaultModel = modelState[1];
+  var maxTokensState = useState(8192);
+  var maxTokens = maxTokensState[0];
+  var setMaxTokens = maxTokensState[1];
+  var busyState = useState(null);
+  var busy = busyState[0];
+  var setBusy = busyState[1];
+  var statusState = useState(null);
+  var status = statusState[0];
+  var setStatus = statusState[1];
+
+  useEffect(function() {
+    if (!open) return;
+    setApiKey('');
+    setStatus(reason ? { ok: false, text: reason } : null);
+    if (settings) {
+      setProvider(settings.provider || 'opencode_go');
+      setBaseUrl(settings.base_url || '');
+      setDefaultModel(settings.default_model || '');
+      setMaxTokens(settings.max_tokens || 8192);
+    }
+    // Only reset the form when the modal opens, not when a save refreshes settings
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, reason]);
+
+  if (!open) return null;
+
+  var providers = (settings && settings.providers) || [
+    { id: 'opencode_go', label: 'OpenCode Go', key_url: 'https://opencode.ai/auth' }
+  ];
+  var providerInfo = providers.find(function(p) { return p.id === provider; }) || providers[0];
+  var hasStoredKey = settings && settings.has_api_key && settings.key_source === 'user';
+
+  async function save(andTest) {
+    setBusy(andTest ? 'test' : 'save');
+    setStatus(null);
+    try {
+      var body = {
+        provider: provider,
+        base_url: baseUrl.trim(),
+        default_model: defaultModel,
+        max_tokens: parseInt(maxTokens, 10) || 8192
+      };
+      if (apiKey.trim()) body.api_key = apiKey.trim();
+      var saved = await apiCall('/settings', { method: 'PUT', body: JSON.stringify(body) });
+      setApiKey('');
+      await onSaved(saved);
+      if (!andTest) {
+        setStatus({ ok: true, text: 'Settings saved.' });
+        return;
+      }
+      var result = await apiCall('/settings/test', {
+        method: 'POST',
+        body: JSON.stringify({ model: defaultModel || undefined })
+      });
+      setStatus({
+        ok: !!result.success,
+        text: result.message + (result.success && result.model_count
+          ? ' — ' + result.model_count + ' models available.'
+          : '')
+      });
+    } catch (e) {
+      setStatus({ ok: false, text: e.message });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function clearKey() {
+    setBusy('clear');
+    setStatus(null);
+    try {
+      var saved = await apiCall('/settings', {
+        method: 'PUT',
+        body: JSON.stringify({ clear_api_key: true })
+      });
+      await onSaved(saved);
+      setStatus({ ok: true, text: 'API key removed.' });
+    } catch (e) {
+      setStatus({ ok: false, text: e.message });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  var stopProp = function(e) { e.stopPropagation(); };
+  var onKeyDown = function(e) {
+    e.stopPropagation();
+    if (e.key === 'Escape') onClose();
+    if (e.key === 'Enter' && !busy) { e.preventDefault(); save(true); }
+  };
+
+  return (
+    <div className="nc-modal-overlay" onClick={onClose} role="dialog"
+      aria-modal="true" aria-label="Provider settings">
+      <div className="nc-modal nc-modal--wide" onClick={stopProp}>
+        <div className="nc-modal-header">
+          <span>Model provider</span>
+          <button className="nc-btn nc-btn--icon" onClick={onClose} aria-label="Close">
+            {'✕'}
+          </button>
+        </div>
+        <div className="nc-modal-body">
+          <div className="nc-form-group">
+            <label className="nc-label" htmlFor="nc-provider">Provider</label>
+            <select id="nc-provider" className="nc-select" value={provider}
+              onChange={function(e) { setProvider(e.target.value); }}>
+              {providers.map(function(p) {
+                return <option key={p.id} value={p.id}>{p.label}</option>;
+              })}
+            </select>
+          </div>
+
+          <div className="nc-form-group">
+            <label className="nc-label" htmlFor="nc-api-key">API key</label>
+            <input id="nc-api-key" className="nc-input nc-input--mono" type="password"
+              autoComplete="off" spellCheck={false} autoFocus
+              value={apiKey}
+              onChange={function(e) { setApiKey(e.target.value); }}
+              onKeyDown={onKeyDown} onKeyUp={stopProp} onKeyPress={stopProp}
+              placeholder={hasStoredKey
+                ? 'Stored: ' + settings.api_key_hint + ' — paste a new key to replace it'
+                : 'sk-...'} />
+            <span className="nc-help">
+              {providerInfo && providerInfo.key_url
+                ? <React.Fragment>
+                    Get it from <a href={providerInfo.key_url} target="_blank" rel="noopener noreferrer">{providerInfo.key_url.replace('https://', '')}</a>.{' '}
+                  </React.Fragment>
+                : null}
+              Stored encrypted (Password2) on this instance, per user. It is never returned to the browser.
+              {settings && settings.key_source === 'shared' && ' You are currently using a key shared by your admin.'}
+            </span>
+          </div>
+
+          {provider === 'custom' && (
+            <div className="nc-form-group">
+              <label className="nc-label" htmlFor="nc-base-url">Base URL</label>
+              <input id="nc-base-url" className="nc-input nc-input--mono" type="text"
+                value={baseUrl}
+                onChange={function(e) { setBaseUrl(e.target.value); }}
+                onKeyDown={onKeyDown} onKeyUp={stopProp} onKeyPress={stopProp}
+                placeholder="https://api.example.com/v1" />
+            </div>
+          )}
+
+          <div className="nc-form-row">
+            <div className="nc-form-group nc-form-group--grow">
+              <label className="nc-label" htmlFor="nc-default-model">Default model</label>
+              <select id="nc-default-model" className="nc-select" value={defaultModel}
+                onChange={function(e) { setDefaultModel(e.target.value); }}>
+                <option value="">Automatic</option>
+                {defaultModel && !models.some(function(m) { return m.id === defaultModel; }) && (
+                  <option value={defaultModel}>{defaultModel}</option>
+                )}
+                {models.map(function(m) {
+                  return <option key={m.id} value={m.id}>{(m.provider ? m.provider + ' · ' : '') + (m.name || m.id)}</option>;
+                })}
+              </select>
+            </div>
+            <div className="nc-form-group nc-form-group--narrow">
+              <label className="nc-label" htmlFor="nc-max-tokens">Max output tokens</label>
+              <input id="nc-max-tokens" className="nc-input" type="number" min="256" max="128000" step="256"
+                value={maxTokens}
+                onChange={function(e) { setMaxTokens(e.target.value); }}
+                onKeyDown={onKeyDown} onKeyUp={stopProp} onKeyPress={stopProp} />
+            </div>
+          </div>
+
+          {status && (
+            <div className={'nc-status-box ' + (status.ok ? 'nc-status-box--ok' : 'nc-status-box--error')}
+              role="status">
+              {status.text}
+            </div>
+          )}
+        </div>
+        <div className="nc-modal-footer">
+          {hasStoredKey && (
+            <button className="nc-btn nc-btn--secondary nc-btn--danger-text" onClick={clearKey}
+              disabled={!!busy}>
+              {busy === 'clear' ? 'Removing...' : 'Remove key'}
+            </button>
+          )}
+          <span className="nc-footer-spacer"></span>
+          <button className="nc-btn nc-btn--secondary" onClick={function() { save(false); }}
+            disabled={!!busy}>
+            {busy === 'save' ? 'Saving...' : 'Save'}
+          </button>
+          <button className="nc-btn nc-btn--primary" onClick={function() { save(true); }}
+            disabled={!!busy || (!apiKey.trim() && !(settings && settings.has_api_key))}>
+            {busy === 'test' ? 'Testing...' : 'Save & test'}
           </button>
         </div>
       </div>
@@ -729,6 +1082,14 @@ function App() {
   var selectedModel = modelState[0];
   var setSelectedModel = modelState[1];
 
+  var settingsState = useState(null);
+  var settings = settingsState[0];
+  var setSettings = settingsState[1];
+
+  var settingsModalState = useState({ open: false, reason: null });
+  var settingsModal = settingsModalState[0];
+  var setSettingsModal = settingsModalState[1];
+
   var sendingState = useState(false);
   var sending = sendingState[0];
   var setSending = sendingState[1];
@@ -740,6 +1101,10 @@ function App() {
   var errorState = useState(null);
   var error = errorState[0];
   var setError = errorState[1];
+
+  var openSettings = useCallback(function(reason) {
+    setSettingsModal({ open: true, reason: typeof reason === 'string' ? reason : null });
+  }, []);
 
   /* ── Loaders ── */
   var loadSessions = useCallback(async function() {
@@ -757,8 +1122,21 @@ function App() {
       var data = await apiCall('/models');
       var list = Array.isArray(data) ? data : (data && data.models ? data.models : []);
       setModels(list);
+      // Only fill in a default when nothing has been chosen yet
+      setSelectedModel(function(current) { return current || (data && data.default_model) || ''; });
     } catch (e) {
       console.error('Failed to load models:', e);
+    }
+  }, []);
+
+  var loadSettings = useCallback(async function() {
+    try {
+      var data = await apiCall('/settings');
+      setSettings(data);
+      return data;
+    } catch (e) {
+      console.error('Failed to load settings:', e);
+      return null;
     }
   }, []);
 
@@ -774,7 +1152,7 @@ function App() {
 
   var loadMessages = useCallback(async function(sessionId) {
     try {
-      var data = await apiCall('/sessions/' + sessionId + '/messages');
+      var data = await apiCall('/sessions/' + sessionId + '/messages?limit=500');
       var list = Array.isArray(data) ? data : (data && data.messages ? data.messages : []);
       setMessages(list);
     } catch (e) {
@@ -792,27 +1170,48 @@ function App() {
     }
   }, []);
 
-  /* ── Initial load ── */
+  var refreshSession = useCallback(async function(sessionId) {
+    await Promise.all([
+      loadMessages(sessionId),
+      loadArtifacts(sessionId),
+      loadSessionDetails(sessionId),
+    ]);
+  }, [loadMessages, loadArtifacts, loadSessionDetails]);
+
+  /* ── Initial load: prompt for a key on first visit ── */
   useEffect(function() {
     loadSessions();
     loadModels();
-  }, [loadSessions, loadModels]);
+    loadSettings().then(function(data) {
+      if (data && !data.has_api_key) openSettings();
+    });
+  }, [loadSessions, loadModels, loadSettings, openSettings]);
 
   /* ── Session change ── */
   useEffect(function() {
     if (activeSessionId) {
-      loadMessages(activeSessionId);
-      loadArtifacts(activeSessionId);
-      loadSessionDetails(activeSessionId);
+      refreshSession(activeSessionId);
     } else {
       setMessages([]);
       setArtifacts([]);
       setActiveSession(null);
     }
-  }, [activeSessionId, loadMessages, loadArtifacts, loadSessionDetails]);
+  }, [activeSessionId, refreshSession]);
+
+  /* ── Surface provider errors, opening settings when the key is the problem ── */
+  var handleError = useCallback(function(e) {
+    if (e && (e.code === 'no_api_key' || e.code === 'auth_failed')) {
+      openSettings(e.message);
+    }
+    setError(e ? e.message : 'Unknown error');
+  }, [openSettings]);
 
   /* ── Send message (auto-creates session if none active) ── */
   var handleSendMessage = useCallback(async function(content, sddCommand) {
+    if (settings && !settings.has_api_key) {
+      openSettings('Add your API key to start chatting.');
+      return;
+    }
     setSending(true);
     setError(null);
     var tempId = 'temp-' + Date.now();
@@ -834,14 +1233,11 @@ function App() {
           })
         });
         sessionId = newSession && (newSession.sys_id || (newSession.session && newSession.session.sys_id));
-        if (sessionId) {
-          setActiveSessionId(sessionId);
-          await loadSessions();
+        if (!sessionId) {
+          throw new Error('Could not create session');
         }
-      }
-
-      if (!sessionId) {
-        throw new Error('Could not create session');
+        setActiveSessionId(sessionId);
+        loadSessions();
       }
 
       var body = { content: content };
@@ -850,18 +1246,38 @@ function App() {
         method: 'POST',
         body: JSON.stringify(body)
       });
-      await loadMessages(sessionId);
-      await loadArtifacts(sessionId);
-      await loadSessionDetails(sessionId);
+      await refreshSession(sessionId);
+      loadSessions();
     } catch (e) {
-      setError(e.message);
-      setMessages(function(prev) {
-        return prev.filter(function(m) { return m.sys_id !== tempId; });
-      });
+      handleError(e);
+      if (sessionId) {
+        // The server keeps the user message even when the model call fails
+        await refreshSession(sessionId);
+      } else {
+        setMessages(function(prev) {
+          return prev.filter(function(m) { return m.sys_id !== tempId; });
+        });
+      }
     } finally {
       setSending(false);
     }
-  }, [activeSessionId, selectedModel, loadMessages, loadArtifacts, loadSessionDetails, loadSessions]);
+  }, [activeSessionId, selectedModel, settings, refreshSession, loadSessions, handleError, openSettings]);
+
+  /* ── Model change: persists on the active session ── */
+  var handleModelChange = useCallback(async function(modelId) {
+    setSelectedModel(modelId);
+    if (!activeSessionId) return;
+    try {
+      await apiCall('/sessions/' + activeSessionId, {
+        method: 'PATCH',
+        body: JSON.stringify({ model: modelId })
+      });
+      await loadSessionDetails(activeSessionId);
+      loadSessions();
+    } catch (e) {
+      handleError(e);
+    }
+  }, [activeSessionId, loadSessionDetails, loadSessions, handleError]);
 
   /* ── Create session ── */
   var handleCreateSession = useCallback(async function(params) {
@@ -875,40 +1291,74 @@ function App() {
       var newId = data && (data.sys_id || (data.session && data.session.sys_id));
       if (newId) setActiveSessionId(newId);
     } catch (e) {
-      setError(e.message);
+      handleError(e);
     }
-  }, [loadSessions]);
+  }, [loadSessions, handleError]);
+
+  var handleArchiveSession = useCallback(async function() {
+    if (!activeSessionId) return;
+    if (!window.confirm('Archive this session? It will be hidden from the sidebar.')) return;
+    try {
+      await apiCall('/sessions/' + activeSessionId, { method: 'DELETE' });
+      setActiveSessionId(null);
+      await loadSessions();
+    } catch (e) {
+      handleError(e);
+    }
+  }, [activeSessionId, loadSessions, handleError]);
 
   /* ── Artifact actions ── */
   var handleApproveArtifact = useCallback(async function(artifactId) {
+    setSending(true);
     try {
       await apiCall('/sessions/' + activeSessionId + '/artifacts/' + artifactId + '/approve', {
         method: 'POST'
       });
-      await loadArtifacts(activeSessionId);
+      await refreshSession(activeSessionId);
     } catch (e) {
-      setError(e.message);
+      handleError(e);
+    } finally {
+      setSending(false);
     }
-  }, [activeSessionId, loadArtifacts]);
+  }, [activeSessionId, refreshSession, handleError]);
 
   var handleRejectArtifact = useCallback(async function(artifactId) {
+    var reason = window.prompt('Why are you rejecting this proposal? (optional)', '');
+    if (reason === null) return;
+    setSending(true);
     try {
       await apiCall('/sessions/' + activeSessionId + '/artifacts/' + artifactId + '/reject', {
         method: 'POST',
-        body: JSON.stringify({ reason: 'Rejected from UI' })
+        body: JSON.stringify({ reason: reason || 'Rejected from UI' })
       });
-      await loadArtifacts(activeSessionId);
+      await refreshSession(activeSessionId);
     } catch (e) {
-      setError(e.message);
+      handleError(e);
+    } finally {
+      setSending(false);
     }
-  }, [activeSessionId, loadArtifacts]);
+  }, [activeSessionId, refreshSession, handleError]);
 
-  var hasPendingProposal = artifacts.some(function(a) {
-    return a.status === 'pending' && a.phase === 'propose';
+  /* ── Settings saved: models and default model depend on the key ── */
+  var handleSettingsSaved = useCallback(async function(saved) {
+    if (saved) setSettings(saved);
+    else await loadSettings();
+    await loadModels();
+    if (saved && saved.default_model && !activeSessionId) setSelectedModel(saved.default_model);
+  }, [loadSettings, loadModels, activeSessionId]);
+
+  var pendingProposal = artifacts.find(function(a) {
+    return a.status === 'pending_review' && a.phase === 'propose';
   });
 
-  var isSddActive = activeSession
-    && (activeSession.sdd_active === 'true' || activeSession.sdd_active === true);
+  var sddActive = isSddActive(activeSession);
+  var sddStatus = activeSession && activeSession.sdd_status;
+  var phaseIndex = SDD_PHASES.findIndex(function(p) { return activeSession && p.key === activeSession.sdd_phase; });
+  var canAdvance = !!(sddStatus && sddStatus.next_actions && sddStatus.next_actions.some(function(a) {
+    if (a.action !== 'transition') return false;
+    return SDD_PHASES.findIndex(function(p) { return p.key === a.target_phase; }) > phaseIndex;
+  }));
+  var needsSetup = !!settings && !settings.has_api_key;
 
   return (
     <div className="nc-app">
@@ -917,20 +1367,24 @@ function App() {
         activeSessionId={activeSessionId}
         onSelectSession={setActiveSessionId}
         onNewSession={function() { setShowModal(true); }}
+        onOpenSettings={function() { openSettings(); }}
+        settings={settings}
       />
       <div className="nc-main">
         <TopBar
           session={activeSession}
           models={models}
           selectedModel={selectedModel}
-          onModelChange={setSelectedModel}
+          onModelChange={handleModelChange}
+          onArchive={handleArchiveSession}
+          busy={sending}
         />
         {error && (
           <div className="nc-error-bar" role="alert">
             <span>{error}</span>
             <button className="nc-btn nc-btn--icon" onClick={function() { setError(null); }}
               aria-label="Dismiss error">
-              {'\u2715'}
+              {'✕'}
             </button>
           </div>
         )}
@@ -940,19 +1394,37 @@ function App() {
           loading={sending}
           onApproveArtifact={handleApproveArtifact}
           onRejectArtifact={handleRejectArtifact}
+          needsSetup={needsSetup}
+          onOpenSettings={function() { openSettings(); }}
         />
         <MessageInput
           onSend={handleSendMessage}
           disabled={sending}
-          sddActive={isSddActive}
-          hasPendingProposal={hasPendingProposal}
+          hasSession={!!activeSessionId}
+          sddActive={sddActive}
+          canAdvance={canAdvance}
+          pendingProposalId={pendingProposal ? pendingProposal.sys_id : null}
+          onApprove={handleApproveArtifact}
+          onReject={handleRejectArtifact}
+          placeholder={needsSetup
+            ? 'Add your API key to start chatting...'
+            : (activeSessionId ? 'Message Now Code... (Shift+Enter for a new line)' : undefined)}
         />
       </div>
       <NewSessionModal
         open={showModal}
         models={models}
+        defaultModel={selectedModel}
         onClose={function() { setShowModal(false); }}
         onCreate={handleCreateSession}
+      />
+      <SettingsModal
+        open={settingsModal.open}
+        reason={settingsModal.reason}
+        settings={settings}
+        models={models}
+        onClose={function() { setSettingsModal({ open: false, reason: null }); }}
+        onSaved={handleSettingsSaved}
       />
     </div>
   );

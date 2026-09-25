@@ -1,90 +1,19 @@
 (function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
     try {
-        var models = [
-            {
-                id: 'claude-sonnet-4-20250514',
-                name: 'Claude Sonnet 4',
-                provider: 'Anthropic',
-                endpoint: 'sendAnthropicMessage',
-                description: 'Anthropic Claude Sonnet 4 — balanced speed and intelligence',
-                max_tokens: 8192
-            },
-            {
-                id: 'claude-opus-4-20250514',
-                name: 'Claude Opus 4',
-                provider: 'Anthropic',
-                endpoint: 'sendAnthropicMessage',
-                description: 'Anthropic Claude Opus 4 — highest intelligence',
-                max_tokens: 8192
-            },
-            {
-                id: 'claude-3-5-haiku-20241022',
-                name: 'Claude 3.5 Haiku',
-                provider: 'Anthropic',
-                endpoint: 'sendAnthropicMessage',
-                description: 'Anthropic Claude 3.5 Haiku — fastest responses',
-                max_tokens: 8192
-            },
-            {
-                id: 'gpt-4o',
-                name: 'GPT-4o',
-                provider: 'OpenAI',
-                endpoint: 'sendChatCompletion',
-                description: 'OpenAI GPT-4o — multimodal flagship',
-                max_tokens: 8192
-            },
-            {
-                id: 'gpt-4o-mini',
-                name: 'GPT-4o Mini',
-                provider: 'OpenAI',
-                endpoint: 'sendChatCompletion',
-                description: 'OpenAI GPT-4o Mini — fast and cost-effective',
-                max_tokens: 8192
-            },
-            {
-                id: 'o3-mini',
-                name: 'o3-mini',
-                provider: 'OpenAI',
-                endpoint: 'sendChatCompletion',
-                description: 'OpenAI o3-mini — reasoning model',
-                max_tokens: 8192
-            },
-            {
-                id: 'qwen-max',
-                name: 'Qwen Max',
-                provider: 'Alibaba',
-                endpoint: 'sendAnthropicMessage',
-                description: 'Alibaba Qwen Max — large context reasoning',
-                max_tokens: 8192
-            },
-            {
-                id: 'qwen-plus',
-                name: 'Qwen Plus',
-                provider: 'Alibaba',
-                endpoint: 'sendAnthropicMessage',
-                description: 'Alibaba Qwen Plus — balanced performance',
-                max_tokens: 8192
-            },
-            {
-                id: 'deepseek-chat',
-                name: 'DeepSeek Chat',
-                provider: 'DeepSeek',
-                endpoint: 'sendChatCompletion',
-                description: 'DeepSeek Chat — open-weight code and reasoning',
-                max_tokens: 8192
-            },
-            {
-                id: 'deepseek-reasoner',
-                name: 'DeepSeek Reasoner',
-                provider: 'DeepSeek',
-                endpoint: 'sendChatCompletion',
-                description: 'DeepSeek Reasoner — chain-of-thought reasoning',
-                max_tokens: 8192
-            }
-        ];
+        var client = new NowCodeLLMClient();
+        var result = client.listModels();
+        var settings = client.getPublicSettings();
 
         response.setStatus(200);
-        response.setBody({ models: models });
+        response.setBody({
+            models: result.models,
+            source: result.source,
+            error: result.error || '',
+            provider: settings.provider,
+            provider_label: settings.provider_label,
+            default_model: client.getDefaultModel(),
+            has_api_key: settings.has_api_key
+        });
     } catch (ex) {
         gs.error('Now Code API - listModels error: ' + ex.getMessage());
         response.setStatus(500);

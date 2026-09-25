@@ -9,15 +9,12 @@
             return;
         }
 
-        var model = body.model || 'claude-sonnet-4-20250514';
+        var client = new NowCodeLLMClient();
+        var model = body.model || client.getDefaultModel();
         var contextScope = body.context_scope || '';
 
-        // Determine model endpoint based on model family
-        var modelLower = model.toLowerCase();
-        var modelEndpoint = 'sendChatCompletion';
-        if (modelLower.indexOf('claude') === 0 || modelLower.indexOf('qwen') === 0) {
-            modelEndpoint = 'sendAnthropicMessage';
-        }
+        // Wire format (chat / messages / responses) the model family is served on
+        var modelEndpoint = client.describeModel(model).format;
 
         // Create session record
         var gr = new GlideRecord('x_1733631_now_code_chat_session');

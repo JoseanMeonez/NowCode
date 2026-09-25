@@ -63,7 +63,7 @@ every record — this diff is what catches it.
 src/client/main.jsx  (React BYOUI, served as UI Page x_1733631_now_code_chat.do)
         |  fetch /api/x_1733631_now_code/now_code_api/...
         v
-src/fluent/api/operations/*.js        12 Scripted REST operations, thin controllers
+src/fluent/api/operations/*.js        16 Scripted REST operations, thin controllers
         |                              validate input, load GlideRecord, delegate
         v
 NowCodeSDDOrchestrator                 src/fluent/sdd/sdd-orchestrator.server.js
@@ -73,9 +73,12 @@ NowCodeSDDOrchestrator                 src/fluent/sdd/sdd-orchestrator.server.js
         |-- NowCodeBestPractices       ServiceNow platform standards
         |-- NowCodeDesignSkills        frontend/UX guidance for generated UI
         v
-sn_ws.RESTMessageV2('NowCode Zen API', fn)   src/fluent/integrations/
+NowCodeLLMClient                       src/fluent/integrations/llm-client.server.js
+        |                              per-user key, model listing, wire-format routing
         v
-OpenCode Zen gateway (https://opencode.ai/zen/v1)
+sn_ws.RESTMessageV2() (direct endpoint)
+        v
+OpenCode Go gateway (https://opencode.ai/zen/go/v1)   — or Zen / any OpenAI-compatible URL
 ```
 
 The REST layer holds no business logic. `send-message.js` is the widest operation
@@ -83,12 +86,31 @@ and still only parses the request, guards session state, dispatches an optional
 `sdd_command`, and hands off. **New behavior belongs in a Script Include, not in an
 operation file.**
 
-The API key is never in code: it resolves through the `NowCode OpenCode Zen`
-connection & credential alias.
+The API key is never in code. Each user pastes it once in the chat UI (Settings,
+bottom-left of the sidebar); `PUT /settings` stores it in
+`x_1733631_now_code_provider_config.api_key`, a **Password2** (encrypted) field,
+and it is never returned to the browser — only a masked hint. Resolution order in
+`NowCodeLLMClient.getSettings()`: the user's own record → a shared record with an
+empty `user` (admins can create one from the list to give everyone a key) → the
+legacy `x_1733631_now_code.zen.api_key` system property. The table's ACLs deny
+everyone but admins; app code reaches it through `GlideRecord` server-side.
 
-The REST message exposes two functions — `sendChatCompletion` (OpenAI-shaped) and
-`sendAnthropicMessage` (Anthropic-shaped) — and the orchestrator picks one based on
-the model family. That split is the extension point for new providers.
+`NowCodeLLMClient` owns every provider call. `GET {base}/models` feeds the model
+picker (static `FALLBACK_MODELS` when there is no key or the call fails).
+`MODEL_FAMILIES` maps a model-id prefix to the wire format the OpenCode gateways
+serve it on — `chat` (`/chat/completions`), `messages` (Anthropic `/messages`) or
+`responses` (OpenAI `/responses`) — and `chat()` retries the other formats when the
+gateway answers 400/404/405/415/422/501/503. New model families and providers are
+added there (`PROVIDERS`, `MODEL_FAMILIES`), not in the orchestrator.
+
+Synchronous outbound REST is capped by `glide.http.outbound.max_timeout` (30 s by
+default). Long answers exceed that; the client turns the timeout into a message
+asking an admin to set `glide.http.outbound.max_timeout.enabled = false` so the
+client's own 180 s `setHttpTimeout` applies.
+
+The `NowCode Zen API` REST message and the `NowCode OpenCode Zen` alias are legacy
+records from the first import; nothing calls them any more. They are kept so
+`install` does not have to delete instance records.
 
 ## The SDD state machine
 

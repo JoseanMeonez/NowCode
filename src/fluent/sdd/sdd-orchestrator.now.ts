@@ -5,7 +5,7 @@ ScriptInclude({
     name: 'NowCodeSDDOrchestrator',
     script: Now.include('./sdd-orchestrator.server.js'),
     description:
-        'Core SDD orchestrator for Now Code. Manages phase transitions, builds context-rich system prompts, routes LLM calls to the correct OpenCode Zen endpoint, extracts structured artifacts, and provides the approval gate workflow for the propose→spec transition.',
+        'Core SDD orchestrator for Now Code. Manages phase transitions, builds context-rich system prompts, sends LLM calls through NowCodeLLMClient (OpenCode Go by default), extracts structured artifacts, and provides the approval gate workflow for the propose→spec transition.',
     apiName: 'x_1733631_now_code.NowCodeSDDOrchestrator',
     clientCallable: false,
     mobileCallable: false,

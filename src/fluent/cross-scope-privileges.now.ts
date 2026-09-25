@@ -108,3 +108,58 @@ CrossScopePrivilege({
     targetType: 'scriptable',
 })
 
+
+// Direct-endpoint REST calls made by NowCodeLLMClient
+CrossScopePrivilege({
+    $id: Now.ID['csp_rest_set_endpoint'],
+    operation: 'execute',
+    status: 'allowed',
+    targetName: 'ScriptableRESTMessageClient.setEndpoint',
+    targetScope: 'global',
+    targetType: 'scriptable',
+})
+
+CrossScopePrivilege({
+    $id: Now.ID['csp_rest_set_http_method'],
+    operation: 'execute',
+    status: 'allowed',
+    targetName: 'ScriptableRESTMessageClient.setHttpMethod',
+    targetScope: 'global',
+    targetType: 'scriptable',
+})
+
+CrossScopePrivilege({
+    $id: Now.ID['csp_rest_set_request_header'],
+    operation: 'execute',
+    status: 'allowed',
+    targetName: 'ScriptableRESTMessageClient.setRequestHeader',
+    targetScope: 'global',
+    targetType: 'scriptable',
+})
+
+CrossScopePrivilege({
+    $id: Now.ID['csp_rest_set_request_body'],
+    operation: 'execute',
+    status: 'allowed',
+    targetName: 'ScriptableRESTMessageClient.setRequestBody',
+    targetScope: 'global',
+    targetType: 'scriptable',
+})
+
+CrossScopePrivilege({
+    $id: Now.ID['csp_rest_have_error'],
+    operation: 'execute',
+    status: 'allowed',
+    targetName: 'ScriptableRESTResponse.haveError',
+    targetScope: 'global',
+    targetType: 'scriptable',
+})
+
+CrossScopePrivilege({
+    $id: Now.ID['csp_rest_get_error_message'],
+    operation: 'execute',
+    status: 'allowed',
+    targetName: 'ScriptableRESTResponse.getErrorMessage',
+    targetScope: 'global',
+    targetType: 'scriptable',
+})

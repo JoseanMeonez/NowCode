@@ -75,8 +75,19 @@
                 response.setBody({ error: 'No valid phase transitions from: ' + currentPhase });
                 return;
             }
-            // Pick the first valid transition (the primary forward path)
-            var targetPhase = body.target_phase || transitions[0];
+            // Default to the primary forward path; backward edges (propose -> explore,
+            // verify -> apply) are only taken when target_phase asks for them
+            var targetPhase = body.target_phase;
+            if (!targetPhase) {
+                var currentIndex = orchestrator.PHASE_ORDER.indexOf(currentPhase);
+                for (var t = 0; t < transitions.length; t++) {
+                    if (orchestrator.PHASE_ORDER.indexOf(transitions[t]) > currentIndex) {
+                        targetPhase = transitions[t];
+                        break;
+                    }
+                }
+                targetPhase = targetPhase || transitions[0];
+            }
             sddResult = orchestrator.transitionPhase(targetPhase);
             if (!sddResult.success) {
                 response.setStatus(400);
@@ -89,8 +100,9 @@
         var result = orchestrator.sendMessage(body.content);
 
         if (!result.success) {
-            response.setStatus(500);
-            response.setBody({ error: result.message });
+            // 424: the provider (not Now Code) failed; the UI uses `code` to guide the user
+            response.setStatus(result.code ? 424 : 500);
+            response.setBody({ error: result.message, code: result.code || 'error' });
             return;
         }
 
