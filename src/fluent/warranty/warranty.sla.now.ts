@@ -28,6 +28,7 @@ Record({
         when_to_resume: 'no_match',
         start_condition: 'cat_item=f9c648602bdfc3905a61fca24291bf62^active=true^EQ',
         stop_condition: 'active=false^EQ',
+        flow: '828f267973333300e289235f04f6a7a3', // Default SLA flow
         active: true,
     },
 })
@@ -51,6 +52,7 @@ Record({
         when_to_resume: 'no_match',
         start_condition: 'cat_item=f9c648602bdfc3905a61fca24291bf62^state=1^EQ',
         stop_condition: 'state!=1^EQ',
+        flow: '828f267973333300e289235f04f6a7a3', // Default SLA flow
         active: true,
     },
 })
@@ -74,6 +76,7 @@ Record({
         when_to_resume: 'no_match',
         start_condition: 'cat_item=f9c648602bdfc3905a61fca24291bf62^state=2^EQ',
         stop_condition: 'active=false^EQ',
+        flow: '828f267973333300e289235f04f6a7a3', // Default SLA flow
         active: true,
     },
 })
