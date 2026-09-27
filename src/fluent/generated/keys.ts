@@ -333,6 +333,18 @@ declare global {
                         table: 'sys_properties'
                         id: '4e7b09f58a8249c8b5f599ff1e2ca491'
                     }
+                    warranty_sla_resolution: {
+                        table: 'contract_sla'
+                        id: 'aee909e2fdea437aba8e5e0fc860490d'
+                    }
+                    warranty_sla_review: {
+                        table: 'contract_sla'
+                        id: '3fecc51d565c4ef58f88b272bcaca29d'
+                    }
+                    warranty_sla_total: {
+                        table: 'contract_sla'
+                        id: '0eb8bb47c31e4253b6ff18259ba73605'
+                    }
                     'warranty.css': {
                         table: 'sys_ux_theme_asset'
                         id: 'bd301645959a4202930d8e09e5919b01'

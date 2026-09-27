@@ -25,7 +25,7 @@ Property({
     $id: Now.ID['warranty_prop_primary_sla'],
     name: 'x_1733631_now_code.warranty.primary_sla',
     type: 'string',
-    value: '',
+    value: 'Garantía - SLA total',
     description:
         'SLA definition (contract_sla) sys_id or name fragment of the primary, whole-request SLA. Empty = the longest SLA attached to the requested item.',
 })
