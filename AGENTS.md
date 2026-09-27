@@ -129,6 +129,11 @@ platform ACLs apply.
   the definition named by `warranty.primary_sla`, else the longest SLA on the RITM
   itself. The *current* SLA is the latest-started running SLA that is not the
   primary.
+- SLA definitions ship as app metadata (`warranty.sla.now.ts`, on `sc_req_item`: total
+  15 days, Revisión 2 days while Open, Resolución 10 days from Work in Progress).
+  `now-sdk install` does not run the "Clear SLA table cache" business rule, so after
+  installing *new* SLA definitions on an instance, open `/cache.do` once — otherwise
+  the SLA engine ignores them.
 - "Día X de Y" is calendar days from `start_time` to `planned_end_time`; the bar
   fill and the at-risk threshold (`warranty.at_risk_percent`) use the SLA engine's
   `business_percentage`.

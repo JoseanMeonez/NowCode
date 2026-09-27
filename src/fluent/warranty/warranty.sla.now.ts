@@ -6,6 +6,8 @@ import { Record } from '@servicenow/sdk/core'
 //   - Revisión / Resolución: stage SLAs that follow the RITM state; the tracker shows
 //     the one currently running as the "current" SLA.
 // No schedule (24x7) so the screen's calendar "Día X de Y" matches the SLA percentage.
+// Install loads these without running the "Clear SLA table cache" business rule, so
+// after the first install on an instance flush caches (/cache.do) or new RITMs get no SLA.
 // ponytail: catalog item sys_id f9c648602bdfc3905a61fca24291bf62 is hardcoded in the
 // start conditions; move it to a property if the item is recreated on another instance.
 
@@ -69,8 +71,8 @@ Record({
         schedule_source: 'no_schedule',
         timezone_source: 'task.caller_id.time_zone',
         relative_duration_works_on: 'Task record',
-        retroactive: true,
-        set_start_to: 'sys_created_on',
+        // Stage SLA: starts when the RITM enters Work in Progress, not at creation
+        retroactive: false,
         retroactive_pause: true,
         when_to_cancel: 'no_match',
         when_to_resume: 'no_match',
