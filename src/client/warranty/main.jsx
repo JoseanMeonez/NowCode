@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ReactDOM from 'react-dom/client';
-import './warranty.css';
+import '../warranty.css';
 import { listRequests } from './api.js';
 import { StatTiles, FilterBar, RequestTable } from './components.jsx';
 import { DetailDrawer } from './detail.jsx';

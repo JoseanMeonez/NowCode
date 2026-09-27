@@ -7,17 +7,19 @@ import './styles.css';
    ═══════════════════════════════════════════════════════════ */
 var API = '/api/x_1733631_now_code/now_code_api';
 
+/* Phase colors read from CSS custom properties so each theme (light/dark)
+   supplies its own AA-safe value — see --nc-phase-* in styles.css. */
 var SDD_PHASES = [
-  { key: 'init', label: 'Initialize', color: '#7aa2f7' },
-  { key: 'explore', label: 'Explore', color: '#7dcfff' },
-  { key: 'propose', label: 'Propose', color: '#9ece6a' },
-  { key: 'spec', label: 'Specification', color: '#e0af68' },
-  { key: 'design', label: 'Design', color: '#bb9af7' },
-  { key: 'tasks', label: 'Tasks', color: '#f7768e' },
-  { key: 'apply', label: 'Apply', color: '#ff9e64' },
-  { key: 'verify', label: 'Verify', color: '#73daca' },
-  { key: 'archive', label: 'Archive', color: '#565f89' },
-  { key: 'onboard', label: 'Onboard', color: '#c0caf5' }
+  { key: 'init', label: 'Initialize', color: 'var(--nc-phase-init)' },
+  { key: 'explore', label: 'Explore', color: 'var(--nc-phase-explore)' },
+  { key: 'propose', label: 'Propose', color: 'var(--nc-phase-propose)' },
+  { key: 'spec', label: 'Specification', color: 'var(--nc-phase-spec)' },
+  { key: 'design', label: 'Design', color: 'var(--nc-phase-design)' },
+  { key: 'tasks', label: 'Tasks', color: 'var(--nc-phase-tasks)' },
+  { key: 'apply', label: 'Apply', color: 'var(--nc-phase-apply)' },
+  { key: 'verify', label: 'Verify', color: 'var(--nc-phase-verify)' },
+  { key: 'archive', label: 'Archive', color: 'var(--nc-phase-archive)' },
+  { key: 'onboard', label: 'Onboard', color: 'var(--nc-phase-onboard)' }
 ];
 
 /* ═══════════════════════════════════════════════════════════
@@ -61,7 +63,13 @@ function isSddActive(session) {
    ═══════════════════════════════════════════════════════════ */
 function getPhaseInfo(key) {
   var found = SDD_PHASES.find(function(p) { return p.key === key; });
-  return found || { key: key, label: key || 'None', color: '#565f89' };
+  return found || { key: key, label: key || 'None', color: 'var(--nc-phase-init)' };
+}
+
+/* Tinted background for a phase badge/pill, theme-safe (avoids string-
+   concatenating an alpha suffix onto a var() reference). */
+function phaseTint(color, pct) {
+  return 'color-mix(in oklab, ' + color + ' ' + (pct || 13) + '%, transparent)';
 }
 
 function formatTime(dateStr) {
@@ -74,35 +82,106 @@ function formatTime(dateStr) {
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
+/* Turns a raw identifier ("context_snapshot") or tag ("javascript") into a
+   sentence-case display label ("Context snapshot" / "Javascript"). */
+function toSentenceCase(raw) {
+  if (!raw) return '';
+  var s = String(raw).replace(/[_-]+/g, ' ').trim();
+  if (!s) return '';
+  return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Icon helper — inline SVG only (no icon library, CSP-safe)
+   ═══════════════════════════════════════════════════════════ */
+var ICON_PATHS = {
+  plus: 'M12 4v16M4 12h16',
+  chevronDown: 'M6 9l6 6 6-6',
+  chevronRight: 'M9 18l6-6-6-6',
+  check: 'M20 6L9 17l-5-5',
+  x: 'M18 6L6 18M6 6l12 12',
+  arrowUp: 'M12 19V5M5 12l7-7 7 7',
+  skipForward: 'M5 4l10 8-10 8V4zM19 5v14',
+  flag: 'M4 3v18M4 4h13l-2.5 4L17 12H4',
+  cpu: 'M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3M7 6h10a1 1 0 011 1v10a1 1 0 01-1 1H7a1 1 0 01-1-1V7a1 1 0 011-1zM10 10h4v4h-4z',
+  menu: 'M3 6h18M3 12h18M3 18h18',
+  alert: 'M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01',
+  message: 'M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z',
+  layers: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5',
+  search: 'M19 11a8 8 0 11-8-8 8 8 0 018 8zM21 21l-4.35-4.35',
+  sun: 'M12 17a5 5 0 100-10 5 5 0 000 10zM12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42',
+  moon: 'M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 108.5 10.5z',
+  archive: 'M21 8v13H3V8M1 3h22v5H1zM10 12h4',
+  key: 'M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.78 7.78 5.5 5.5 0 017.78-7.78zM15.5 7.5l3 3L22 7l-3-3'
+};
+
+function Icon(props) {
+  var name = props.name;
+  var size = props.size || 16;
+  var d = ICON_PATHS[name];
+  if (!d) return null;
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.75}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={props.className}
+      style={props.style}
+    >
+      <path d={d} />
+    </svg>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════
    Simple Markdown Renderer
    ═══════════════════════════════════════════════════════════ */
-var INLINE_PATTERNS = [
-  { re: /`([^`]+)`/, render: function(m, k) { return React.createElement('code', { key: k, className: 'nc-inline-code' }, m[1]); } },
-  { re: /\*\*([^*]+)\*\*/, render: function(m, k) { return React.createElement('strong', { key: k }, formatInline(m[1])); } },
-  { re: /\*([^*\s][^*]*)\*/, render: function(m, k) { return React.createElement('em', { key: k }, formatInline(m[1])); } }
-];
-
 function formatInline(text) {
   var parts = [];
-  var remaining = text;
   var k = 0;
+  var remaining = text;
   while (remaining.length > 0) {
-    // Take the earliest match so "**a** and `b`" renders both
-    var best = null;
-    INLINE_PATTERNS.forEach(function(p) {
-      var m = p.re.exec(remaining);
-      if (m && (!best || m.index < best.m.index)) best = { m: m, p: p };
-    });
-    if (!best) {
+    var codeMatch = /`([^`]+)`/.exec(remaining);
+    var boldMatch = /\*\*([^*]+)\*\*/.exec(remaining);
+    var italicMatch = /\*([^*]+)\*/.exec(remaining);
+
+    var candidates = [];
+    if (codeMatch) candidates.push({ type: 'code', match: codeMatch, index: codeMatch.index });
+    if (boldMatch) candidates.push({ type: 'bold', match: boldMatch, index: boldMatch.index });
+    if (italicMatch) candidates.push({ type: 'italic', match: italicMatch, index: italicMatch.index });
+
+    if (candidates.length === 0) {
       parts.push(React.createElement('span', { key: k++ }, remaining));
       break;
     }
-    if (best.m.index > 0) {
-      parts.push(React.createElement('span', { key: k++ }, remaining.slice(0, best.m.index)));
+
+    /* Earliest match wins; bold wins over italic at the same start index. */
+    candidates.sort(function(a, b) {
+      if (a.index !== b.index) return a.index - b.index;
+      if (a.type === 'bold') return -1;
+      if (b.type === 'bold') return 1;
+      return 0;
+    });
+
+    var winner = candidates[0];
+    var before = remaining.slice(0, winner.index);
+    if (before) parts.push(React.createElement('span', { key: k++ }, before));
+
+    if (winner.type === 'code') {
+      parts.push(React.createElement('code', { key: k++, className: 'nc-inline-code' }, winner.match[1]));
+    } else if (winner.type === 'bold') {
+      parts.push(React.createElement('strong', { key: k++ }, winner.match[1]));
+    } else {
+      parts.push(React.createElement('em', { key: k++ }, winner.match[1]));
     }
-    parts.push(best.p.render(best.m, k++));
-    remaining = remaining.slice(best.m.index + best.m[0].length);
+
+    remaining = remaining.slice(winner.index + winner.match[0].length);
   }
   return parts.length === 1 ? parts[0] : parts;
 }
@@ -124,7 +203,7 @@ function renderMarkdown(text) {
       i++;
       blocks.push(
         React.createElement('div', { className: 'nc-code-block', key: blocks.length },
-          lang ? React.createElement('div', { className: 'nc-code-lang' }, lang) : null,
+          lang ? React.createElement('div', { className: 'nc-code-lang' }, toSentenceCase(lang)) : null,
           React.createElement('pre', null,
             React.createElement('code', null, codeLines.join('\n'))
           )
@@ -186,16 +265,21 @@ function renderMarkdown(text) {
    ═══════════════════════════════════════════════════════════ */
 function SDDPhaseDots(props) {
   var currentPhase = props.currentPhase;
+  var activeIndex = SDD_PHASES.findIndex(function(p) { return p.key === currentPhase; });
+  var activePhase = activeIndex >= 0 ? SDD_PHASES[activeIndex] : null;
+  var trackLabel = activePhase
+    ? 'SDD phase ' + (activeIndex + 1) + ' of ' + SDD_PHASES.length + ': ' + activePhase.label
+    : 'SDD phase';
   return (
-    <div className="nc-phase-dots">
+    <div className="nc-phase-dots" role="img" aria-label={trackLabel}>
       {SDD_PHASES.map(function(phase) {
         var isActive = phase.key === currentPhase;
         return (
-          <div
+          <span
             key={phase.key}
             className={'nc-phase-dot' + (isActive ? ' nc-phase-dot--active' : '')}
-            style={isActive ? { backgroundColor: phase.color } : undefined}
-            title={phase.label}
+            style={isActive ? { backgroundColor: phase.color, color: phase.color } : undefined}
+            aria-hidden="true"
           />
         );
       })}
@@ -206,6 +290,13 @@ function SDDPhaseDots(props) {
 /* ═══════════════════════════════════════════════════════════
    SDD Artifact Card
    ═══════════════════════════════════════════════════════════ */
+function artifactStatusIcon(status) {
+  if (status === 'approved') return 'check';
+  if (status === 'rejected') return 'x';
+  if (status === 'pending_review') return 'alert';
+  return null;
+}
+
 function SDDArtifactCard(props) {
   var artifact = props.artifact;
   var onApprove = props.onApprove;
@@ -214,24 +305,30 @@ function SDDArtifactCard(props) {
   var isExpanded = expanded[0];
   var setExpanded = expanded[1];
   var phase = getPhaseInfo(artifact.phase);
+  var status = artifact.status || 'draft';
+  var statusIconName = artifactStatusIcon(status);
 
   return (
     <div className="nc-artifact-card" style={{ borderLeftColor: phase.color }}>
       <div className="nc-artifact-header" role="button" tabIndex={0}
+        aria-expanded={isExpanded}
         onClick={function() { setExpanded(!isExpanded); }}
         onKeyDown={function(e) { if (e.key === 'Enter') setExpanded(!isExpanded); }}>
         <div className="nc-artifact-info">
           <span className="nc-artifact-title">{artifact.title}</span>
-          <span className="nc-artifact-type">{artifact.artifact_type}</span>
+          <span className="nc-artifact-type">{toSentenceCase(artifact.artifact_type)}</span>
         </div>
         <div className="nc-artifact-meta">
-          <span className="nc-badge" style={{ backgroundColor: phase.color + '22', color: phase.color }}>
+          <span className="nc-badge" style={{ backgroundColor: phaseTint(phase.color), color: phase.color }}>
             {phase.label}
           </span>
-          <span className={'nc-badge nc-badge--' + (artifact.status === 'pending_review' ? 'pending' : (artifact.status || 'draft'))}>
-            {(artifact.status || 'draft').replace('_', ' ')}
+          <span className={'nc-badge nc-badge--' + (status === 'pending_review' ? 'pending' : status)}>
+            {statusIconName && <Icon name={statusIconName} size={12} />}
+            {toSentenceCase(status)}
           </span>
-          <span className="nc-artifact-chevron">{isExpanded ? '\u25BE' : '\u25B8'}</span>
+          <span className={'nc-artifact-chevron' + (isExpanded ? ' nc-artifact-chevron--open' : '')}>
+            <Icon name="chevronRight" size={14} />
+          </span>
         </div>
       </div>
       {isExpanded && (
@@ -241,11 +338,11 @@ function SDDArtifactCard(props) {
             <div className="nc-artifact-actions">
               <button className="nc-btn nc-btn--approve"
                 onClick={function() { onApprove(artifact.sys_id); }}>
-                {'\u2713'} Approve
+                <Icon name="check" size={14} /> <span>Approve</span>
               </button>
               <button className="nc-btn nc-btn--reject"
                 onClick={function() { onReject(artifact.sys_id); }}>
-                {'\u2717'} Reject
+                <Icon name="x" size={14} /> <span>Reject</span>
               </button>
             </div>
           )}
@@ -272,7 +369,7 @@ function SessionItem(props) {
       <div className="nc-session-item-meta">
         <span className="nc-badge nc-badge--model">{session.model || 'default'}</span>
         {phase && (
-          <span className="nc-badge" style={{ backgroundColor: phase.color + '22', color: phase.color }}>
+          <span className="nc-badge" style={{ backgroundColor: phaseTint(phase.color), color: phase.color }}>
             {phase.label}
           </span>
         )}
@@ -290,8 +387,10 @@ function SessionSidebar(props) {
   var activeSessionId = props.activeSessionId;
   var onSelectSession = props.onSelectSession;
   var onNewSession = props.onNewSession;
-  var onOpenSettings = props.onOpenSettings;
-  var settings = props.settings;
+  var open = props.open;
+  var onClose = props.onClose;
+  var sidebarVisible = props.sidebarVisible;
+  var onToggleSidebar = props.onToggleSidebar;
 
   var today = new Date().toDateString();
   var activeSessions = sessions.filter(function(s) { return s.status !== 'archived'; });
@@ -302,175 +401,86 @@ function SessionSidebar(props) {
     return new Date(s.updated_on || s.created_on).toDateString() !== today;
   });
 
-  return (
-    <aside className="nc-sidebar" role="navigation" aria-label="Sessions">
-      <div className="nc-sidebar-header">
-        <div className="nc-logo">
-          <span className="nc-logo-icon" aria-hidden="true">{'\u27E8/\u27E9'}</span>
-          <span className="nc-logo-text">Now Code</span>
-        </div>
-        <button className="nc-btn nc-btn--new" onClick={onNewSession}
-          aria-label="Create new session">
-          + New
-        </button>
-      </div>
-      <div className="nc-sidebar-sessions">
-        {todaySessions.length > 0 && (
-          <div className="nc-session-group">
-            <div className="nc-session-group-label">Today</div>
-            {todaySessions.map(function(s) {
-              return (
-                <SessionItem key={s.sys_id} session={s}
-                  active={s.sys_id === activeSessionId}
-                  onClick={function() { onSelectSession(s.sys_id); }} />
-              );
-            })}
-          </div>
-        )}
-        {earlierSessions.length > 0 && (
-          <div className="nc-session-group">
-            <div className="nc-session-group-label">Earlier</div>
-            {earlierSessions.map(function(s) {
-              return (
-                <SessionItem key={s.sys_id} session={s}
-                  active={s.sys_id === activeSessionId}
-                  onClick={function() { onSelectSession(s.sys_id); }} />
-              );
-            })}
-          </div>
-        )}
-        {activeSessions.length === 0 && (
-          <div className="nc-empty-state">
-            No sessions yet. Click <strong>+ New</strong> to start a conversation.
-          </div>
-        )}
-      </div>
-      <div className="nc-sidebar-footer">
-        <button className="nc-provider-status" onClick={onOpenSettings}
-          aria-label="Open provider settings">
-          <span className={'nc-status-dot' + (settings && settings.has_api_key ? ' nc-status-dot--ok' : '')}
-            aria-hidden="true"></span>
-          <span className="nc-provider-status-text">
-            <span className="nc-provider-status-name">
-              {settings ? settings.provider_label : 'Provider'}
-            </span>
-            <span className="nc-provider-status-sub">
-              {settings && settings.has_api_key
-                ? 'API key ' + (settings.api_key_hint || 'configured')
-                : 'No API key — click to connect'}
-            </span>
-          </span>
-          <span className="nc-provider-status-gear" aria-hidden="true">{'\u2699'}</span>
-        </button>
-      </div>
-    </aside>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════
-   Model Picker
-   ═══════════════════════════════════════════════════════════ */
-function ModelPicker(props) {
-  var models = props.models;
-  var selectedModel = props.selectedModel;
-  var onModelChange = props.onModelChange;
-  var disabled = props.disabled;
-  var openState = useState(false);
-  var open = openState[0];
-  var setOpen = openState[1];
-  var filterState = useState('');
-  var filter = filterState[0];
-  var setFilter = filterState[1];
-  var rootRef = useRef(null);
-
-  useEffect(function() {
-    if (!open) return undefined;
-    function onDocClick(e) {
-      if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener('mousedown', onDocClick);
-    return function() { document.removeEventListener('mousedown', onDocClick); };
-  }, [open]);
-
-  var needle = filter.trim().toLowerCase();
-  var visible = models.filter(function(m) {
-    if (!needle) return true;
-    return (m.id + ' ' + (m.name || '') + ' ' + (m.provider || '')).toLowerCase().indexOf(needle) !== -1;
-  });
-
-  // Group by vendor, keeping first-seen order
-  var groups = [];
-  var byVendor = {};
-  visible.forEach(function(m) {
-    var vendor = m.provider || 'Other';
-    if (!byVendor[vendor]) {
-      byVendor[vendor] = { vendor: vendor, models: [] };
-      groups.push(byVendor[vendor]);
-    }
-    byVendor[vendor].models.push(m);
-  });
-
-  var selected = models.find(function(m) { return m.id === selectedModel; });
-  var label = selected ? (selected.name || selected.id) : (selectedModel || 'Select model');
-
-  function choose(id) {
-    onModelChange(id);
-    setOpen(false);
-    setFilter('');
-  }
+  var handleSelect = function(id) {
+    onSelectSession(id);
+    if (onClose) onClose();
+  };
 
   return (
-    <div className="nc-model-selector" ref={rootRef}>
-      <button className="nc-btn nc-btn--model-select"
-        onClick={function() { setOpen(!open); }}
-        disabled={disabled}
-        aria-expanded={open}
-        aria-haspopup="listbox"
-        title={selectedModel}>
-        <span className="nc-model-select-label">{label}</span>
-        <span className="nc-chevron">{'▾'}</span>
-      </button>
-      {open && (
-        <div className="nc-dropdown nc-dropdown--models">
-          <input className="nc-input nc-dropdown-search" type="text" autoFocus
-            placeholder="Search models..."
-            value={filter}
-            onChange={function(e) { setFilter(e.target.value); }}
-            onKeyDown={function(e) {
-              e.stopPropagation();
-              if (e.key === 'Escape') setOpen(false);
-              if (e.key === 'Enter' && visible.length > 0) choose(visible[0].id);
-            }}
-            onKeyUp={function(e) { e.stopPropagation(); }}
-            onKeyPress={function(e) { e.stopPropagation(); }} />
-          <div className="nc-dropdown-list" role="listbox">
-            {groups.map(function(g) {
-              return (
-                <div key={g.vendor} className="nc-dropdown-group">
-                  <div className="nc-dropdown-group-label">{g.vendor}</div>
-                  {g.models.map(function(m) {
-                    return (
-                      <div key={m.id} role="option"
-                        aria-selected={m.id === selectedModel}
-                        className={'nc-dropdown-item' + (m.id === selectedModel ? ' nc-dropdown-item--selected' : '')}
-                        onClick={function() { choose(m.id); }}>
-                        <span>{m.name || m.id}</span>
-                        <span className="nc-dropdown-item-sub">{m.id}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
-            {visible.length === 0 && (
-              <div className="nc-dropdown-item nc-dropdown-item--empty">
-                {models.length === 0 ? 'No models available' : 'No matches'}
-              </div>
-            )}
+    <React.Fragment>
+      {open && <div className="nc-scrim" onClick={onClose} aria-hidden="true" />}
+      <aside className={'nc-sidebar' + (open ? ' nc-sidebar--open' : '') + (props.collapsed ? ' nc-sidebar--collapsed' : '')}
+        role="navigation" aria-label="Sessions"
+        aria-hidden={props.hidden ? 'true' : undefined}
+        inert={props.hidden ? '' : undefined}>
+        <div className="nc-sidebar-header">
+          <div className="nc-logo">
+            <span className="nc-logo-icon" aria-hidden="true">{'\u27E8/\u27E9'}</span>
+            <span className="nc-logo-text">Now Code</span>
           </div>
+          <button className="nc-btn nc-btn--icon nc-menu-btn" onClick={onToggleSidebar}
+            aria-label={sidebarVisible ? 'Hide sessions' : 'Show sessions'} aria-expanded={!!sidebarVisible}>
+            <Icon name="menu" size={18} />
+          </button>
         </div>
-      )}
-    </div>
+        <div className="nc-sidebar-sessions">
+          <div className="nc-sessions-toolbar">
+            <span className="nc-sessions-label">Sessions</span>
+            <button className="nc-btn nc-btn--plus-ghost" onClick={onNewSession}
+              aria-label="New session">
+              <Icon name="plus" size={14} />
+            </button>
+          </div>
+          {todaySessions.length > 0 && (
+            <div className="nc-session-group">
+              <div className="nc-session-group-label">Today</div>
+              {todaySessions.map(function(s) {
+                return (
+                  <SessionItem key={s.sys_id} session={s}
+                    active={s.sys_id === activeSessionId}
+                    onClick={function() { handleSelect(s.sys_id); }} />
+                );
+              })}
+            </div>
+          )}
+          {earlierSessions.length > 0 && (
+            <div className="nc-session-group">
+              <div className="nc-session-group-label">Earlier</div>
+              {earlierSessions.map(function(s) {
+                return (
+                  <SessionItem key={s.sys_id} session={s}
+                    active={s.sys_id === activeSessionId}
+                    onClick={function() { handleSelect(s.sys_id); }} />
+                );
+              })}
+            </div>
+          )}
+          {activeSessions.length === 0 && (
+            <div className="nc-empty-state">
+              No sessions yet. Click <strong>New</strong> to start a conversation.
+            </div>
+          )}
+        </div>
+        <div className="nc-sidebar-footer">
+          <button className="nc-provider-status" onClick={props.onOpenSettings}
+            aria-label="Open provider settings">
+            <span className={'nc-status-dot' + (props.settings && props.settings.has_api_key ? ' nc-status-dot--ok' : '')}
+              aria-hidden="true"></span>
+            <span className="nc-provider-status-text">
+              <span className="nc-provider-status-name">
+                {props.settings ? props.settings.provider_label : 'Provider'}
+              </span>
+              <span className="nc-provider-status-sub">
+                {props.settings && props.settings.has_api_key
+                  ? 'API key ' + (props.settings.api_key_hint || 'configured')
+                  : 'No API key \u2014 click to connect'}
+              </span>
+            </span>
+            <Icon name="key" size={16} />
+          </button>
+        </div>
+      </aside>
+    </React.Fragment>
   );
 }
 
@@ -479,44 +489,56 @@ function ModelPicker(props) {
    ═══════════════════════════════════════════════════════════ */
 function TopBar(props) {
   var session = props.session;
+  var sidebarVisible = props.sidebarVisible;
+  var onToggleSidebar = props.onToggleSidebar;
+  var theme = props.theme;
+  var onToggleTheme = props.onToggleTheme;
+
   var phase = isSddActive(session) ? getPhaseInfo(session.sdd_phase) : null;
 
   return (
     <header className="nc-topbar" role="banner">
       <div className="nc-topbar-left">
-        <span className="nc-topbar-title">
-          {session ? session.name : 'New conversation'}
-        </span>
-        {session && session.context_scope && (
-          <span className="nc-badge nc-badge--scope">{session.context_scope}</span>
+        {!sidebarVisible && (
+          <button className="nc-btn nc-btn--icon nc-menu-btn" onClick={onToggleSidebar}
+            aria-label="Show sessions" aria-expanded={false}>
+            <Icon name="menu" size={18} />
+          </button>
+        )}
+        {session && (
+          <React.Fragment>
+            <span className="nc-topbar-title">{session.name}</span>
+            {session.context_scope && (
+              <span className="nc-badge nc-badge--scope">{session.context_scope}</span>
+            )}
+            {phase && (
+              <div className="nc-topbar-sdd">
+                <span className="nc-badge" style={{ backgroundColor: phaseTint(phase.color), color: phase.color }}>
+                  SDD: {phase.label}
+                </span>
+                <SDDPhaseDots currentPhase={session.sdd_phase} />
+              </div>
+            )}
+          </React.Fragment>
         )}
       </div>
       <div className="nc-topbar-right">
-        {phase && (
-          <div className="nc-topbar-sdd">
-            <span className="nc-badge" style={{ backgroundColor: phase.color + '22', color: phase.color }}>
-              SDD: {phase.label}
-            </span>
-            <SDDPhaseDots currentPhase={session.sdd_phase} />
-          </div>
-        )}
         {session && session.total_tokens > 0 && (
           <span className="nc-topbar-tokens" title="Tokens used in this session">
             {session.total_tokens.toLocaleString()} tok
           </span>
         )}
-        <ModelPicker
-          models={props.models}
-          selectedModel={props.selectedModel}
-          onModelChange={props.onModelChange}
-          disabled={props.busy}
-        />
         {session && (
           <button className="nc-btn nc-btn--icon" onClick={props.onArchive}
-            title="Archive session" aria-label="Archive session" disabled={props.busy}>
-            {'🗄'}
+            disabled={props.busy} aria-label="Archive session" title="Archive session">
+            <Icon name="archive" size={16} />
           </button>
         )}
+        <button className="nc-btn nc-btn--icon nc-btn--theme"
+          onClick={onToggleTheme}
+          aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}>
+          <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} />
+        </button>
       </div>
     </header>
   );
@@ -542,13 +564,11 @@ function ChatMessage(props) {
 
   return (
     <div className={'nc-message nc-message--' + role}>
-      <div className="nc-message-avatar" aria-hidden="true">
-        {isUser ? '\uD83D\uDC64' : '\uD83E\uDD16'}
-      </div>
+      <span className="nc-sr-only">{isUser ? 'You said' : 'Now Code replied'}</span>
       <div className="nc-message-body">
         {phase && (
-          <span className="nc-badge nc-badge--sm"
-            style={{ backgroundColor: phase.color + '22', color: phase.color }}>
+          <span className="nc-badge nc-badge--sm nc-message-phase"
+            style={{ backgroundColor: phaseTint(phase.color), color: phase.color }}>
             {phase.label}
           </span>
         )}
@@ -577,8 +597,6 @@ function ChatArea(props) {
   var loading = props.loading;
   var onApproveArtifact = props.onApproveArtifact;
   var onRejectArtifact = props.onRejectArtifact;
-  var needsSetup = props.needsSetup;
-  var onOpenSettings = props.onOpenSettings;
   var scrollRef = useRef(null);
 
   useEffect(function() {
@@ -594,23 +612,23 @@ function ChatArea(props) {
           <div className="nc-welcome-icon" aria-hidden="true">{'\u27E8/\u27E9'}</div>
           <h2>Welcome to Now Code</h2>
           <p>Your AI development assistant for ServiceNow</p>
-          {needsSetup && (
+          {props.needsSetup && (
             <div className="nc-setup-card">
               <div className="nc-setup-card-title">Connect your OpenCode Go subscription</div>
               <div className="nc-setup-card-text">
                 Paste your API key once and every model in your plan becomes available here.
                 The key is stored encrypted on this instance and never sent to the browser.
               </div>
-              <button className="nc-btn nc-btn--primary" onClick={onOpenSettings}>
+              <button className="nc-btn nc-btn--primary" onClick={props.onOpenSettings}>
                 Add API key
               </button>
             </div>
           )}
-          <div className="nc-welcome-hints">
-            <div className="nc-hint">{'\uD83D\uDCAC'} Chat about code and architecture</div>
-            <div className="nc-hint">{'\uD83D\uDCD0'} Use SDD for structured development</div>
-            <div className="nc-hint">{'\uD83D\uDD0D'} Explore platform tables and schemas</div>
-          </div>
+          <ul className="nc-welcome-hints">
+            <li className="nc-hint"><Icon name="message" size={16} /><span>Chat about code and architecture</span></li>
+            <li className="nc-hint"><Icon name="layers" size={16} /><span>Use SDD for structured development</span></li>
+            <li className="nc-hint"><Icon name="search" size={16} /><span>Explore platform tables and schemas</span></li>
+          </ul>
         </div>
       )}
       {messages.map(function(msg, idx) {
@@ -618,7 +636,7 @@ function ChatArea(props) {
       })}
       {artifacts.length > 0 && (
         <div className="nc-artifacts-section">
-          <div className="nc-artifacts-label">SDD Artifacts</div>
+          <div className="nc-artifacts-label">SDD artifacts</div>
           {artifacts.map(function(a) {
             return (
               <SDDArtifactCard key={a.sys_id} artifact={a}
@@ -630,7 +648,7 @@ function ChatArea(props) {
       )}
       {loading && (
         <div className="nc-message nc-message--assistant">
-          <div className="nc-message-avatar" aria-hidden="true">{'\uD83E\uDD16'}</div>
+          <span className="nc-sr-only">Now Code is replying</span>
           <div className="nc-message-body">
             <div className="nc-message-content">
               <div className="nc-loading-dots" aria-label="Loading">
@@ -651,15 +669,63 @@ function MessageInput(props) {
   var onSend = props.onSend;
   var disabled = props.disabled;
   var sddActive = props.sddActive;
-  var hasSession = props.hasSession;
-  var canAdvance = props.canAdvance;
   var pendingProposalId = props.pendingProposalId;
-  var onApprove = props.onApprove;
-  var onReject = props.onReject;
+  var models = props.models;
+  var selectedModel = props.selectedModel;
+  var onModelChange = props.onModelChange;
   var valueState = useState('');
   var value = valueState[0];
   var setValue = valueState[1];
   var textareaRef = useRef(null);
+  var dropdownState = useState(false);
+  var dropdownOpen = dropdownState[0];
+  var setDropdownOpen = dropdownState[1];
+  var selectorRef = useRef(null);
+  var filterState = useState('');
+  var filter = filterState[0];
+  var setFilter = filterState[1];
+
+  var needle = filter.trim().toLowerCase();
+  var visibleModels = models.filter(function(m) {
+    if (!needle) return true;
+    return (m.id + ' ' + (m.name || '') + ' ' + (m.provider || '')).toLowerCase().indexOf(needle) !== -1;
+  });
+  // Group by vendor, keeping first-seen order
+  var modelGroups = [];
+  var byVendor = {};
+  visibleModels.forEach(function(m) {
+    var vendor = m.provider || 'Other';
+    if (!byVendor[vendor]) {
+      byVendor[vendor] = { vendor: vendor, models: [] };
+      modelGroups.push(byVendor[vendor]);
+    }
+    byVendor[vendor].models.push(m);
+  });
+  var selectedInfo = models.find(function(m) { return m.id === selectedModel; });
+
+  function chooseModel(id) {
+    onModelChange(id);
+    setDropdownOpen(false);
+    setFilter('');
+  }
+
+  useEffect(function() {
+    if (!dropdownOpen) return undefined;
+    function handleOutside(e) {
+      if (selectorRef.current && !selectorRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    function handleKey(e) {
+      if (e.key === 'Escape') setDropdownOpen(false);
+    }
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('keydown', handleKey);
+    return function() {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [dropdownOpen]);
 
   var handleSend = useCallback(function() {
     var trimmed = value.trim();
@@ -689,47 +755,104 @@ function MessageInput(props) {
 
   return (
     <div className="nc-input-area">
-      {hasSession && (
+      {props.hasSession && (
         <div className="nc-quick-actions">
           {!sddActive && (
             <button className="nc-btn nc-btn--quick" disabled={disabled}
               onClick={function() { onSend('Start the SDD process for this conversation.', 'start_sdd'); }}>
-              {'\uD83D\uDE80'} Start SDD
+              <Icon name="flag" size={14} /> <span>Start SDD</span>
             </button>
           )}
-          {sddActive && !pendingProposalId && canAdvance && (
+          {sddActive && !pendingProposalId && props.canAdvance && (
             <button className="nc-btn nc-btn--quick" disabled={disabled}
               onClick={function() { onSend('Advance to the next SDD phase and produce its artifact.', 'next_phase'); }}>
-              {'\u23ED'} Next Phase
+              <Icon name="skipForward" size={14} /> <span>Next phase</span>
             </button>
           )}
           {pendingProposalId && (
             <React.Fragment>
               <button className="nc-btn nc-btn--approve" disabled={disabled}
-                onClick={function() { onApprove(pendingProposalId); }}>
-                {'\u2713'} Approve proposal
+                onClick={function() { props.onApprove(pendingProposalId); }}>
+                <Icon name="check" size={14} /> <span>Approve proposal</span>
               </button>
               <button className="nc-btn nc-btn--reject" disabled={disabled}
-                onClick={function() { onReject(pendingProposalId); }}>
-                {'\u2717'} Reject proposal
+                onClick={function() { props.onReject(pendingProposalId); }}>
+                <Icon name="x" size={14} /> <span>Reject proposal</span>
               </button>
             </React.Fragment>
           )}
         </div>
       )}
-      <div className="nc-input-row">
+      <div className="nc-composer-shell">
         <textarea ref={textareaRef} className="nc-textarea"
-          placeholder={props.placeholder || 'Ask anything... a session will be created automatically'}
+          placeholder={props.placeholder || 'Ask anything...'}
           value={value} onChange={handleInput} onKeyDown={handleKeyDown}
           onKeyUp={function(e) { e.stopPropagation(); }}
           onKeyPress={function(e) { e.stopPropagation(); }}
           onFocus={function(e) { e.stopPropagation(); }}
           disabled={disabled} rows={1}
           aria-label="Message input" />
-        <button className="nc-btn nc-btn--send" onClick={handleSend}
-          disabled={disabled || !value.trim()} aria-label="Send message">
-          {'\u25B6'}
-        </button>
+        <div className="nc-composer-toolbar">
+          <div className="nc-model-selector" ref={selectorRef}>
+            <button className="nc-btn nc-btn--model-chip"
+              onClick={function() { setDropdownOpen(!dropdownOpen); }}
+              aria-expanded={dropdownOpen}
+              aria-haspopup="listbox">
+              <Icon name="cpu" size={14} />
+              <span>{selectedInfo ? (selectedInfo.name || selectedInfo.id) : (selectedModel || 'Select model')}</span>
+              <Icon name="chevronDown" size={14} className={'nc-chevron' + (dropdownOpen ? ' nc-chevron--open' : '')} />
+            </button>
+            {dropdownOpen && (
+              <div className="nc-dropdown nc-dropdown--up nc-dropdown--models">
+                <input className="nc-input nc-dropdown-search" type="text" autoFocus
+                  placeholder="Search models..." aria-label="Search models"
+                  value={filter}
+                  onChange={function(e) { setFilter(e.target.value); }}
+                  onKeyDown={function(e) {
+                    e.stopPropagation();
+                    if (e.key === 'Enter' && visibleModels.length > 0) chooseModel(visibleModels[0].id);
+                  }}
+                  onKeyUp={function(e) { e.stopPropagation(); }}
+                  onKeyPress={function(e) { e.stopPropagation(); }} />
+                <div className="nc-dropdown-list" role="listbox">
+                  {modelGroups.map(function(g) {
+                    return (
+                      <div key={g.vendor}>
+                        <div className="nc-dropdown-group-label">{g.vendor}</div>
+                        {g.models.map(function(m) {
+                          var isSelected = m.id === selectedModel;
+                          return (
+                            <div key={m.id} role="option"
+                              aria-selected={isSelected}
+                              tabIndex={0}
+                              className={'nc-dropdown-item' + (isSelected ? ' nc-dropdown-item--selected' : '')}
+                              onClick={function() { chooseModel(m.id); }}
+                              onKeyDown={function(e) { if (e.key === 'Enter') chooseModel(m.id); }}>
+                              <span className="nc-dropdown-item-main">
+                                <span>{m.name || m.id}</span>
+                                <span className="nc-dropdown-item-sub">{m.id}</span>
+                              </span>
+                              {isSelected && <Icon name="check" size={14} />}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                  {visibleModels.length === 0 && (
+                    <div className="nc-dropdown-item nc-dropdown-item--empty">
+                      {models.length === 0 ? 'No models available' : 'No matches'}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <button className="nc-btn nc-btn--send" onClick={handleSend}
+            disabled={disabled || !value.trim()} aria-label="Send message">
+            <Icon name="arrowUp" size={18} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -785,17 +908,17 @@ function NewSessionModal(props) {
 
   return (
     <div className="nc-modal-overlay" onClick={onClose} role="dialog"
-      aria-modal="true" aria-label="New Session">
+      aria-modal="true" aria-label="New session">
       <div className="nc-modal" onClick={function(e) { e.stopPropagation(); }}>
         <div className="nc-modal-header">
-          <span>New Session</span>
+          <span>New session</span>
           <button className="nc-btn nc-btn--icon" onClick={onClose} aria-label="Close">
-            {'\u2715'}
+            <Icon name="x" size={16} />
           </button>
         </div>
         <div className="nc-modal-body">
           <div className="nc-form-group">
-            <label className="nc-label" htmlFor="nc-session-name">Session Name</label>
+            <label className="nc-label" htmlFor="nc-session-name">Session name</label>
             <input id="nc-session-name" className="nc-input" type="text"
               value={name} onChange={function(e) { setName(e.target.value); }}
               onKeyDown={handleKeyDown} onKeyUp={stopProp} onKeyPress={stopProp}
@@ -812,7 +935,7 @@ function NewSessionModal(props) {
             </select>
           </div>
           <div className="nc-form-group">
-            <label className="nc-label" htmlFor="nc-scope-input">Context Scope (optional)</label>
+            <label className="nc-label" htmlFor="nc-scope-input">Context scope (optional)</label>
             <input id="nc-scope-input" className="nc-input" type="text"
               value={scope} onChange={function(e) { setScope(e.target.value); }}
               onKeyDown={handleKeyDown} onKeyUp={stopProp} onKeyPress={stopProp}
@@ -823,7 +946,7 @@ function NewSessionModal(props) {
           <button className="nc-btn nc-btn--secondary" onClick={onClose}>Cancel</button>
           <button className="nc-btn nc-btn--primary" onClick={handleCreate}
             disabled={!name.trim()}>
-            Create Session
+            Create session
           </button>
         </div>
       </div>
@@ -952,7 +1075,7 @@ function SettingsModal(props) {
         <div className="nc-modal-header">
           <span>Model provider</span>
           <button className="nc-btn nc-btn--icon" onClick={onClose} aria-label="Close">
-            {'✕'}
+            <Icon name="x" size={16} />
           </button>
         </div>
         <div className="nc-modal-body">
@@ -1082,14 +1205,6 @@ function App() {
   var selectedModel = modelState[0];
   var setSelectedModel = modelState[1];
 
-  var settingsState = useState(null);
-  var settings = settingsState[0];
-  var setSettings = settingsState[1];
-
-  var settingsModalState = useState({ open: false, reason: null });
-  var settingsModal = settingsModalState[0];
-  var setSettingsModal = settingsModalState[1];
-
   var sendingState = useState(false);
   var sending = sendingState[0];
   var setSending = sendingState[1];
@@ -1102,9 +1217,93 @@ function App() {
   var error = errorState[0];
   var setError = errorState[1];
 
+  var settingsState = useState(null);
+  var settings = settingsState[0];
+  var setSettings = settingsState[1];
+
+  var settingsModalState = useState({ open: false, reason: null });
+  var settingsModal = settingsModalState[0];
+  var setSettingsModal = settingsModalState[1];
+
   var openSettings = useCallback(function(reason) {
     setSettingsModal({ open: true, reason: typeof reason === 'string' ? reason : null });
   }, []);
+
+  var sidebarState = useState(false);
+  var sidebarOpen = sidebarState[0];
+  var setSidebarOpen = sidebarState[1];
+
+  /* Desktop collapses the docked sidebar; mobile (≤860px, matches CSS) toggles the off-canvas sheet. */
+  var collapsedState = useState(false);
+  var sidebarCollapsed = collapsedState[0];
+  var setSidebarCollapsed = collapsedState[1];
+  var mobileState = useState(function() {
+    return window.matchMedia('(max-width: 860px)').matches;
+  });
+  var isMobile = mobileState[0];
+  var setIsMobile = mobileState[1];
+
+  useEffect(function() {
+    var mq = window.matchMedia('(max-width: 860px)');
+    function handleChange(e) { setIsMobile(e.matches); }
+    mq.addEventListener('change', handleChange);
+    return function() { mq.removeEventListener('change', handleChange); };
+  }, []);
+
+  var sidebarVisible = isMobile ? sidebarOpen : !sidebarCollapsed;
+  var toggleSidebar = function() {
+    if (isMobile) {
+      setSidebarOpen(function(v) { return !v; });
+    } else {
+      setSidebarCollapsed(function(v) { return !v; });
+    }
+  };
+
+  var themeState = useState(function() {
+    try {
+      var saved = window.localStorage.getItem('nc-theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+    } catch (e) { /* ignore */ }
+    return null;
+  });
+  var theme = themeState[0];
+  var setTheme = themeState[1];
+
+  useEffect(function() {
+    var root = document.documentElement;
+    if (theme === 'light' || theme === 'dark') {
+      root.setAttribute('data-theme', theme);
+    } else {
+      root.removeAttribute('data-theme');
+    }
+  }, [theme]);
+
+  var toggleTheme = useCallback(function() {
+    setTheme(function(current) {
+      var isDark = current === 'dark' || (!current && window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches);
+      var next = isDark ? 'light' : 'dark';
+      try { window.localStorage.setItem('nc-theme', next); } catch (e) { /* ignore */ }
+      return next;
+    });
+  }, []);
+
+  var effectiveTheme = theme || (
+    (typeof window !== 'undefined' && window.matchMedia &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'
+  );
+
+  /* ── Close mobile sidebar sheet on Escape ── */
+  useEffect(function() {
+    if (!sidebarOpen) return undefined;
+    function handleKey(e) {
+      if (e.key === 'Escape') setSidebarOpen(false);
+    }
+    document.addEventListener('keydown', handleKey);
+    return function() {
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [sidebarOpen]);
 
   /* ── Loaders ── */
   var loadSessions = useCallback(async function() {
@@ -1360,31 +1559,41 @@ function App() {
   }));
   var needsSetup = !!settings && !settings.has_api_key;
 
+  var phaseColor = sddActive ? getPhaseInfo(activeSession.sdd_phase).color : 'var(--nc-accent)';
+
   return (
-    <div className="nc-app">
+    <div className="nc-app" style={{ '--nc-phase': phaseColor }}>
       <SessionSidebar
         sessions={sessions}
         activeSessionId={activeSessionId}
         onSelectSession={setActiveSessionId}
         onNewSession={function() { setShowModal(true); }}
+        open={sidebarOpen}
+        onClose={function() { setSidebarOpen(false); }}
+        collapsed={sidebarCollapsed}
+        hidden={!sidebarVisible}
+        sidebarVisible={sidebarVisible}
+        onToggleSidebar={toggleSidebar}
         onOpenSettings={function() { openSettings(); }}
         settings={settings}
       />
       <div className="nc-main">
         <TopBar
           session={activeSession}
-          models={models}
-          selectedModel={selectedModel}
-          onModelChange={handleModelChange}
+          sidebarVisible={sidebarVisible}
+          onToggleSidebar={toggleSidebar}
+          theme={effectiveTheme}
+          onToggleTheme={toggleTheme}
           onArchive={handleArchiveSession}
           busy={sending}
         />
         {error && (
           <div className="nc-error-bar" role="alert">
+            <Icon name="alert" size={16} />
             <span>{error}</span>
             <button className="nc-btn nc-btn--icon" onClick={function() { setError(null); }}
               aria-label="Dismiss error">
-              {'✕'}
+              <Icon name="x" size={14} />
             </button>
           </div>
         )}
@@ -1406,6 +1615,9 @@ function App() {
           pendingProposalId={pendingProposal ? pendingProposal.sys_id : null}
           onApprove={handleApproveArtifact}
           onReject={handleRejectArtifact}
+          models={models}
+          selectedModel={selectedModel}
+          onModelChange={handleModelChange}
           placeholder={needsSetup
             ? 'Add your API key to start chatting...'
             : (activeSessionId ? 'Message Now Code... (Shift+Enter for a new line)' : undefined)}

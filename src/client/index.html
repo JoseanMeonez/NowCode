@@ -2,7 +2,23 @@
   <head>
     <title>Now Code</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Public+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
     <sdk:now-ux-globals></sdk:now-ux-globals>
+    <script>
+      (function () {
+        try {
+          var saved = window.localStorage.getItem('nc-theme');
+          if (saved === 'light' || saved === 'dark') {
+            document.documentElement.setAttribute('data-theme', saved);
+          }
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
     <script
       src="main.jsx?uxpcb=$[UxFrameworkScriptables.getFlushTimestamp()]"
       type="module"

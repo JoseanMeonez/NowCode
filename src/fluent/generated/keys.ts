@@ -333,9 +333,14 @@ declare global {
                         table: 'sys_properties'
                         id: '4e7b09f58a8249c8b5f599ff1e2ca491'
                     }
+                    'warranty.css': {
+                        table: 'sys_ux_theme_asset'
+                        id: 'bd301645959a4202930d8e09e5919b01'
+                    }
                     'warranty/warranty.css': {
                         table: 'sys_ux_theme_asset'
                         id: '36d930b490534d0cb96de1cbf889196a'
+                        deleted: true
                     }
                 }
                 composite: [
